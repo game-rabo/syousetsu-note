@@ -142,24 +142,32 @@ async function api(p,o={}){const r=await fetch(SB+'/rest/v1/'+p,{...o,headers:{a
 const skip=x=>x.s||LIVES.includes(x.author)||(BS.includes(P.name)&&x.author===P.name);
 async function cloudPush(){
   try{for(const[t,k]of TB){const rows=[],done=[];
-    for(const x of D[k]){if(skip(x))continue;const{u,...c}=x,j=JSON.stringify(c);if(hs[x.id]===j)continue;x.u=Date.now();rows.push({id:x.id,author:x.author,data:x,updated_at:new Date().toISOString()});done.push([x.id,j])}
+    for(const x of D[k]){if(skip(x)||TOMB().includes(x.id))continue;const{u,...c}=x,j=JSON.stringify(c);if(hs[x.id]===j)continue;x.u=Date.now();rows.push({id:x.id,author:x.author,data:x,updated_at:new Date().toISOString()});done.push([x.id,j])}
     if(rows.length){await api(t+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows)});done.forEach(([i,j])=>hs[i]=j)}}
-   if(P.name&&P.name!=='未設定'){const d={bio:P.bio,following:fl(),sup:P.gt||0,tt:P.tt||'',pm:P.prem||0},j=JSON.stringify(d);if(hs.pf!==j){await api('nn_profiles?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{id:P.name,data:d,updated_at:new Date().toISOString()}])});hs.pf=j}}
+   if(P.name&&P.name!=='未設定'){const d={bio:P.bio,following:fl(),sup:P.gt||0,tt:P.tt||'',pm:P.prem||0,del:TOMB().slice(-300)},j=JSON.stringify(d);if(hs.pf!==j){await api('nn_profiles?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{id:P.name,data:d,updated_at:new Date().toISOString()}])});hs.pf=j}}
    cloud='同期済み '+new Date().toLocaleTimeString()}catch(e){cloud='エラー（supabase_reset.sql を実行しましたか？）'}}
 function mergeIn(l,r){const o=(r.u||0)>(l.u||0)?{...l,...r}:{...r,...l};
   for(const k of['likes','marks','subs','rd','pv0','pv1','pv2','pv3','vw'])if(l[k]||r[k])o[k]=[...(r[k]||[]).filter(v=>v!==P.name),...(l[k]||[]).filter(v=>v===P.name)];
   if(l.comments||r.comments){const m=new Map();[...(l.comments||[]),...(r.comments||[])].forEach(c=>m.set(c.a+c.d,c));o.comments=[...m.values()]}if(l.parts||r.parts){const m=new Map();[...(l.parts||[]),...(r.parts||[])].forEach(c=>m.set(c.a+c.d,c));o.parts=[...m.values()].sort((a,b)=>a.d-b.d);o.body=o.parts.map(x=>x.t).join('\n\n')}if(l.rx||r.rx){o.rx={};for(const x of new Set([...Object.keys(l.rx||{}),...Object.keys(r.rx||{})]))o.rx[x]=[...((r.rx||{})[x]||[]).filter(v=>v!==P.name),...((l.rx||{})[x]||[]).filter(v=>v===P.name)]}return o}
 async function cloudPull(){
   try{let ch=0;for(const[t,k]of TB){const rows=await api(t+'?select=data&order=updated_at.desc&limit=500');
-    for(const{data:r}of rows){const i=D[k].findIndex(x=>x.id===r.id);
+    for(const{data:r}of rows){if(TOMB().includes(r.id)){if(!(P.dp2||[]).includes(r.id))(P.dp2=P.dp2||[]).push(r.id);continue}const i=D[k].findIndex(x=>x.id===r.id);
       if(i<0){D[k].push(r);ch++;const{u,...c}=r;hs[r.id]=JSON.stringify(c)}
       else if(!skip(D[k][i])){const m=mergeIn(D[k][i],r);if(JSON.stringify(m)!==JSON.stringify(D[k][i])){D[k][i]=m;ch++}}}}
-   (await api('nn_profiles?select=id,data&id=not.like.~*&limit=1000')).forEach(x=>PR[x.id]=x.data);claimG();
+   (await api('nn_profiles?select=id,data&id=not.like.~*&limit=1000')).forEach(x=>PR[x.id]=x.data);ch+=applyTombs();claimG();await purge();
    cloud='同期済み '+new Date().toLocaleTimeString();
    if(ch){save();if(!lv&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))render()}}catch(e){cloud='エラー（supabase_reset.sql を実行しましたか？）'}}
-const cdel=(t,id)=>api(t+'?id=eq.'+encodeURIComponent(id),{method:'DELETE'}).catch(()=>{});
-async function cloudWipe(){if(!confirm('クラウド上の「'+P.name+'」の作品とRoomをすべて削除します。よろしいですか？'))return;
-  try{for(const[t]of TB)await api(t+'?author=eq.'+encodeURIComponent(P.name),{method:'DELETE'});await api('nn_profiles?id=eq.'+encodeURIComponent(P.name),{method:'DELETE'});toast('クラウドの自分のデータを削除しました')}catch(e){toast('削除できませんでした')}}
+const TOMB=()=>P.dl=P.dl||[];
+const cdel=async(t,id)=>{await api(t+'?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});const r=await api(t+'?select=id&id=eq.'+encodeURIComponent(id));return !(r&&r.length)};
+/* サーバー抹消：削除済みIDを記録し、失敗したら次回同期で再試行。他端末の復活も防ぐ */
+async function purge(){const p=P.dp2||[];if(!p.length)return true;let ok=true;
+  for(const id of [...p]){try{const a=await cdel('nn_episodes',id),b=await cdel('nn_rooms',id);if(a&&b)P.dp2=P.dp2.filter(x=>x!==id);else ok=false}catch(e){ok=false}}
+  save();return ok}
+function applyTombs(){let ch=0;const dead=new Set(TOMB());Object.entries(PR).forEach(([n,v])=>(v.del||[]).forEach(id=>{if(n===P.name)return;[['eps'],['rooms']].forEach(([k])=>{const i=D[k].findIndex(x=>x.id===id&&x.author===n);if(i>=0){D[k].splice(i,1);ch++}})}));return ch}
+async function cloudWipe(){if(!confirm('クラウド上の「'+P.name+'」の作品とRoomをすべて削除します。元に戻せません。よろしいですか？'))return;
+  try{const ids=[...D.eps,...D.rooms].filter(x=>x.author===P.name).map(x=>x.id);ids.forEach(id=>{TOMB().push(id);hs[id]=0});
+   for(const[t]of TB)await api(t+'?author=eq.'+encodeURIComponent(P.name),{method:'DELETE'});
+   D.eps=D.eps.filter(x=>x.author!==P.name);D.rooms=D.rooms.filter(x=>x.author!==P.name);save();hs.pf=null;await cloudPush();render();toast('クラウドの自分のデータを削除しました')}catch(e){toast('削除できませんでした（サーバーの削除権限を確認してください）')}}
 
 let tab=0,stack=[],mode=0,Q='',sheet=null,lv=null;
 const newEp=()=>({title:'',desc:'',tags:'',room:'',body:'',pub:true,fol:false,img:'',at:0});
@@ -320,8 +328,12 @@ function library(){
    +sec('自分のRoom',list(rs,r=>`<div class=row>${cov(r,40,54)}<div class=grow onclick="go('room','${r.id}')"><b>${esc(r.title)}</b><small>${esc(r.author)}・${ago(r.date)}・${r.subs.length}購読</small></div><button class=del onclick="delRoom('${r.id}')">🗑</button></div>`,'まだRoomがありません'))
    +lib2()+sec('🖍 ハイライト帳（'+(P.hl||[]).length+'）',list(P.hl||[],hlRow,'本文の一節を選んで「🖍 ハイライト」を押すと保存されます'))+sec('ブックマーク',list(D.eps.filter(e=>e.marks.includes(me)&&vis(e)),epRow,'ブックマークはありません'));
 }
-function delEp(id){if(confirm('この作品を削除しますか？')){D.eps=D.eps.filter(e=>e.id!==id);cdel('nn_episodes',id);save();render()}}
-function delRoom(id){if(confirm('このRoomを削除しますか？')){D.rooms=D.rooms.filter(r=>r.id!==id);cdel('nn_rooms',id);D.eps.forEach(e=>{if(e.room===id)e.room=''});save();render()}}
+async function delEp(id){if(!confirm('この作品を削除しますか？\nサーバーからも完全に削除され、元に戻せません。'))return;
+  TOMB().push(id);(P.dp2=P.dp2||[]).push(id);D.eps=D.eps.filter(e=>e.id!==id);delete hs[id];save();render();
+  try{const ok=await purge();toast(ok?'🗑 作品をサーバーから削除しました':'端末からは削除しました。サーバー削除は次回同期で再試行します（権限設定が必要な場合あり）')}catch(e){toast('端末からは削除しました。サーバー削除は再試行します')}}
+async function delRoom(id){if(!confirm('このRoomを削除しますか？\nサーバーからも完全に削除され、元に戻せません。'))return;
+  TOMB().push(id);(P.dp2=P.dp2||[]).push(id);D.rooms=D.rooms.filter(r=>r.id!==id);delete hs[id];D.eps.forEach(e=>{if(e.room===id)e.room=''});save();render();
+  try{const ok=await purge();toast(ok?'🗑 Roomをサーバーから削除しました':'端末からは削除しました。サーバー削除は次回同期で再試行します')}catch(e){toast('端末からは削除しました。サーバー削除は再試行します')}}
 
 function profile(){
   const n=P.n,nt=[['like','いいね'],['comment','コメント'],['follow','フォロー'],['book','ブックマーク'],['sub','購読']];
@@ -707,37 +719,40 @@ function insOpen(id){const e=D.eps.find(x=>x.id===id);if(!e||e.author!==P.name)r
   sheet={t:'📊 インサイト',h:`<div class=pad><b>『${esc(e.title)}』</b><div class=lvt style="margin-top:8px">${c(s.vw,'閲覧')+c(s.vi,'読者数')+c(s.lk,'いいね')+c(s.mk,'ブクマ')+c(s.cm,'感想')+c(s.rx,'リアクション')+c(s.eng,'エンゲージメント')+c(pct(s.eng,s.vw),'反応率')+c(pct(s.lk,s.vw),'いいね率')+c(pct(fo,s.vw),'フォロワー閲覧')+c((P.rv||{})[e.id]||0,'収益pt')+c('×'+s.hm,'ヒット倍率')+c(g+'pt','投げ銭')}</div><h3 style="margin-left:0">日別の閲覧（7日）</h3>${bars(days(7).map(t=>vwDay(e,dk(t))),days(7).map(t=>new Date(t).getDate()))}<h3 style="margin-left:0">時間帯別の閲覧</h3>${bars(hr,hr.map((_,h)=>h%6?'':h))}<small>この画面は作者本人にのみ表示されます。閲覧は読者ごとに1日1回で数えます。</small></div>`};render()}
 
 /* ---------- ストア（課金）：コイン／プレミアム／着せ替え／称号／アイテム ---------- */
-const PAY_TEST=true; // true=テストモード（実際の課金なし）。実決済につなぐまでは false にすると購入が止まります
 const prem=()=>(P.prem||0)>Date.now();
-const PK=[[100,120,0],[500,600,30],[1000,1200,100],[3000,3500,400],[10000,11000,2000]]; // [コイン,円,おまけ]
 const CXT=[['t10','🍇 ぶどうテーマ',80,'#7b2ff7'],['t11','🍋 レモンテーマ',80,'#f2c400'],['t12','🌿 ミントテーマ',100,'#19b98a'],['t13','🌹 ローズテーマ',100,'#e0245e'],['t14','🌌 ギャラクシーテーマ',150,'#3a3fd8'],['t15','🍑 ピーチテーマ',100,'#ff8a80'],['t16','🌃 ナイトブルーテーマ',120,'#1e3a8a'],['t17','🍵 抹茶テーマ',100,'#6b9a2a'],['t18','🪸 コーラルテーマ',100,'#ff6f61'],['t19','⚫ モノクロテーマ',120,'#444444'],['t20','🔶 ゴールドリッチテーマ',200,'#c9a227'],['t21','🌊 ターコイズテーマ',150,'#00b8c4']];
 const CXF=[['f10','💎 ダイヤ枠',100,'0 0 0 3px #7ee8ff,0 0 16px 4px #b9f3ff'],['f11','🔥 炎枠',120,'0 0 0 3px #ff5a1f,0 0 18px 5px #ffb300'],['f12','❄️ 氷枠',100,'0 0 0 3px #bfe9ff,0 0 14px 4px #5cc8ff'],['f13','🌸 桜枠',100,'0 0 0 3px #ffc1d9,0 0 16px 4px #ff7eb3'],['f14','👑 王冠枠',200,'0 0 0 3px #ffd200,0 0 0 6px #fff,0 0 18px 6px #ffb300'],['f15','⚡ 雷枠',150,'0 0 0 3px #ffee58,0 0 20px 6px #7c4dff'],['f16','🌈 虹ネオン枠',250,'0 0 0 3px #ff4fa3,0 0 0 6px #2fd4ff,0 0 0 9px #a6f21a,0 0 18px 8px #ffd200'],['f17','🏅 黄金二重枠',180,'0 0 0 3px #b8860b,0 0 0 6px #ffd700,0 0 14px 4px #fff2a8']];
 const CX=[...CXT,...CXF],SHA=()=>SH.concat(CX.map(x=>[x[0],x[1],0,x[3]]));
 const TTL=[['🌟','新星作家',30],['🖋','文豪',80],['📚','本の虫',40],['🌙','夜更かし作家',40],['🐉','伝説の語り部',150],['💫','星屑',30],['🍀','幸運の使者',60],['🎭','物語の魔術師',100],['🔥','情熱の筆',50],['🧙','言葉の魔法使い',120]];
-const ITM=[['bst24','🚀','作品ブースト 24時間',50,'ホームの「ブースト中の作品」に24時間表示'],['bst72','🚀','作品ブースト 72時間',120,'3日間おすすめ枠に表示'],['bst168','🌠','作品ブースト 1週間',250,'7日間おすすめ枠に表示'],['dr','📝','下書き枠 +20',60,'下書き箱の上限を20件拡張（何度でも）'],['pt1','⭐','ポイントパック 1,200pt',100,'投げ銭・ショップに使えます'],['pt2','⭐','ポイントパック 6,500pt',500,'+500pt おまけ付き'],['pt3','💰','ポイントパック 14,000pt',1000,'+2,000pt おまけ・いちばんお得']];
+const ITM=[['bst24','🚀','作品ブースト 24時間',50,'ホームの「ブースト中の作品」に24時間表示'],['bst72','🚀','作品ブースト 72時間',120,'3日間おすすめ枠に表示'],['bst168','🌠','作品ブースト 1週間',250,'7日間おすすめ枠に表示'],['dr','📝','下書き枠 +20',60,'下書き箱の上限を20件拡張（何度でも）'],];[CXT,CXF,TTL].forEach(a=>a.forEach(x=>x[2]*=5));ITM.forEach(x=>x[3]*=5); // 価格はすべてポイント
 let STP=0;const stSeg=i=>{STP=i;render()};
 const srow=(e,n,d,b)=>`<div class=row style="cursor:default"><span style="font-size:26px">${e}</span><div class=grow><b>${n}</b><small>${d}</small></div>${b}</div>`;
-function spend(n,name){if(myBan()){banSheet(myBan());return 0}if((P.cn||0)<n){STP=0;toast('💎コインが足りません。コインを購入してください');render();return 0}P.cn-=n;(P.ord=P.ord||[]).unshift({d:Date.now(),n:name,c:n});P.ord=P.ord.slice(0,60);return 1}
-function buyPack(i){if(!PAY_TEST)return toast('決済は準備中です');const[c,y,b]=PK[i];if(!confirm('【テストモード】実際の課金は発生しません。\n'+c+'コイン（¥'+y+'）を購入しますか？'))return;let g=c+b;if(!P.fp){P.fp=1;g+=Math.floor(c*.5)}P.cn=(P.cn||0)+g;(P.ord=P.ord||[]).unshift({d:Date.now(),n:'コイン'+c+'購入 ¥'+y,c:-g});save();boom();toast('💎 +'+g+'コイン');render()}
-function buyPrem(){if(!spend(400,'プレミアム30日'))return;P.prem=Math.max(Date.now(),P.prem||0)+30*864e5;save();boom();toast('👑 プレミアムが始まりました');render()}
+function spend(n,name){if(myBan()){banSheet(myBan());return 0}if((P.pt||0)<n){STP=0;toast('ポイントが足りません（ミッション・収益・おみくじで貯めよう）');render();return 0}P.pt-=n;(P.ord=P.ord||[]).unshift({d:Date.now(),n:name,c:n});P.ord=P.ord.slice(0,60);return 1}
+function buyPrem(){if(!spend(2000,'プレミアム30日'))return;P.prem=Math.max(Date.now(),P.prem||0)+30*864e5;save();boom();toast('👑 プレミアムが始まりました');render()}
 function buyCx(id){const x=CX.find(v=>v[0]===id),own=P.own=P.own||[];if(!own.includes(id)){if(!spend(x[2],x[1]))return;own.push(id);boom();toast(x[1]+' を手に入れた！')}equip(id)}
 function buyTt(i){const t=TTL[i],o=P.tts=P.tts||[],k=t[0]+t[1];if(!o.includes(k)){if(!spend(t[2],'称号 '+k))return;o.push(k);boom()}P.tt=P.tt===k?'':k;save();toast(P.tt?'称号を装備しました':'称号を外しました');render()}
-function buyItm(id){const x=ITM.find(v=>v[0]===id);if(id.startsWith('bst'))return bstPick(id);if(!spend(x[3],x[2]))return;if(id==='dr')P.dx=(P.dx||0)+20;else P.pt=(P.pt||0)+{pt1:1200,pt2:7000,pt3:16000}[id];save();boom();toast(x[2]+' を購入しました');render()}
+function buyItm(id){const x=ITM.find(v=>v[0]===id);if(id.startsWith('bst'))return bstPick(id);if(!spend(x[3],x[2]))return;P.dx=(P.dx||0)+20;save();boom();toast(x[2]+' を購入しました');render()}
 function bstPick(id){const m=D.eps.filter(e=>e.author===P.name);if(!m.length)return toast('投稿した作品がありません');sheet={t:'🚀 ブーストする作品を選択',h:list(m,e=>`<div class=row onclick="bstDo('${id}','${e.id}')">${cov(e,40,54)}<div class=grow><b>${esc(e.title)}</b>${e.bst>Date.now()?'<small>ブースト中（延長されます）</small>':''}</div></div>`)};render()}
 function bstDo(id,eid){const x=ITM.find(v=>v[0]===id),e=D.eps.find(v=>v.id===eid),h={bst24:24,bst72:72,bst168:168}[id];if(!e||!spend(x[3],x[2]))return;e.bst=Math.max(Date.now(),e.bst||0)+h*36e5;e.u=Date.now();sheet=null;save();boom();toast('🚀 『'+e.title+'』をブーストしました');render()}
 function claimDaily(){const d=ymd(Date.now());if(P.dbn===d)return toast('今日は受け取り済みです');P.dbn=d;const v=prem()?100:10;P.pt=(P.pt||0)+v;save();boom();toast('🎁 ログインボーナス +'+v+'pt'+(prem()?'（プレミアム）':''));render()}
-const cxRow=x=>{const own=(P.own||[]).includes(x[0]),on=P.th===x[0]||P.fr===x[0],t=x[0][0]=='t';return srow(`<span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:${t?x[3]:'#8884'};${t?'':'box-shadow:'+x[3]}"></span>`,x[1],t?'アクセントカラー':'アイコンの枠',`<button class="btn${own?' o':''}" onclick="buyCx('${x[0]}')">${on?'装備中':own?'装備':'💎'+x[2]}</button>`)};
-function storeH(){const pm=prem(),hd=`<div class=pad><div class=card style="padding:14px;text-align:center"><small>所持</small><b style="font-size:26px">💎 ${P.cn||0}</b>　⭐ ${P.pt||0}pt${pm?`<br><span class=badge style="background:#e08a00">👑 PREMIUM　あと${Math.ceil((P.prem-Date.now())/864e5)}日</span>`:''}<div style="margin-top:8px"><button class="btn o" onclick="claimDaily()">🎁 ログインボーナス（${pm?100:10}pt）</button></div>${PAY_TEST?'<small style="color:var(--red)">⚠ テストモード：実際の課金は発生しません</small>':''}</div></div>`;let b;
-  if(STP==0)b=sec('💎 コインパック',PK.map(([c,y,o],i)=>srow('💎',c.toLocaleString()+'コイン'+(o?` <span class=badge>+${o}おまけ</span>`:''),'¥'+y.toLocaleString()+(P.fp?'':'　初回は+50%増量'),`<button class=btn onclick="buyPack(${i})">¥${y.toLocaleString()}</button>`)).join(''))+`<div class=empty>コインはストア内の商品の購入に使います。ポイント（無料）とは別の通貨です。</div>`;
-  else if(STP==1)b=sec('👑 プレミアム（30日・400コイン）',[['🚫','広告バー非表示','ホーム画面の広告を消します'],['🎁','ログインボーナス 100pt','通常は10pt'],['💰','収益ポイント +10%','獲得した収益に10%上乗せ'],['📝','下書き枠 +30','下書き箱の上限が拡大'],['👑','PREMIUMバッジ','名前の横に表示']].map(x=>srow(x[0],x[1],x[2],'')).join('')+`<div style="padding:12px"><button class="btn w" style="margin:0;width:100%" onclick="buyPrem()">${pm?'30日延長する':'プレミアムを始める'}　💎400</button></div>`);
-  else if(STP==2)b=sec('🎨 テーマ',CXT.map(cxRow).join(''))+sec('🖼 アイコン枠',CXF.map(cxRow).join(''))+sec('🛒 ポイントショップ（ポイントで購入）',shopH());
-  else if(STP==3)b=sec('🏷 称号（名前の横に表示）',TTL.map((t,i)=>{const k=t[0]+t[1],own=(P.tts||[]).includes(k);return srow(t[0],t[1],'みんなに見える称号',`<button class="btn${own?' o':''}" onclick="buyTt(${i})">${P.tt===k?'装備中':own?'装備':'💎'+t[2]}</button>`)}).join(''));
-  else if(STP==4)b=sec('🧰 アイテム',ITM.map(x=>srow(x[1],x[2],x[4],`<button class=btn onclick="buyItm('${x[0]}')">💎${x[3]}</button>`)).join(''));
-  else b=sec('🧾 履歴',list(P.ord||[],o=>srow(o.c<0?'💎':'🛍',esc(o.n),ago(o.d),`<b>${o.c<0?'＋'+(-o.c):'−'+o.c}💎</b>`),'購入履歴はありません'));
-  return hd+seg(['💎コイン','👑プレミアム','🎨着せ替え','🏷称号','🧰アイテム','🧾履歴'],STP,'stSeg')+b}
-const storeSec=()=>sec('💎 ストア',`<div class=empty>コイン 💎${P.cn||0}${prem()?'　👑プレミアム中':''}</div><div style="padding:0 14px 12px"><button class="btn w" style="margin:0;width:100%" onclick="go('store','x')">ストアを開く</button></div>`);
+const cxRow=x=>{const own=(P.own||[]).includes(x[0]),on=P.th===x[0]||P.fr===x[0],t=x[0][0]=='t';return srow(`<span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:${t?x[3]:'#8884'};${t?'':'box-shadow:'+x[3]}"></span>`,x[1],t?'アクセントカラー':'アイコンの枠',`<button class="btn${own?' o':''}" onclick="buyCx('${x[0]}')">${on?'装備中':own?'装備':x[2]+'pt'}</button>`)};
+function storeH(){const pm=prem(),hd=`<div class=pad><div class=card style="padding:14px;text-align:center"><small>所持ポイント</small><br><b style="font-size:26px">⭐ ${P.pt||0}pt</b>${pm?`<br><span class=badge style="background:#e08a00">👑 PREMIUM　あと${Math.ceil((P.prem-Date.now())/864e5)}日</span>`:''}<div style="margin-top:8px"><button class="btn o" onclick="claimDaily()">🎁 ログインボーナス（${pm?100:10}pt）</button></div></div></div>`;let b;
+  if(STP==0)b=sec('⭐ ポイントの貯め方',[['📖','読まれる・反応される','閲覧+1／いいね+3／ブクマ+4／感想+5。ヒット倍率とマイルストーンもあります'],['🎁','投げ銭をもらう','作品ページやライブで受け取れます'],['🎯','デイリーミッション','毎日4つ達成で合計 +60pt'],['🎴','おみくじ','毎日1回 5〜50pt'],['📚','月間読書チャレンジ','達成で +50pt'],['🏅','週間ランキング','先週の閲覧TOP3に +300／+150／+80pt'],['⏱','25分集中','執筆タイマーで +20pt']].map(x=>srow(x[0],x[1],x[2],'')).join('')+`<div class=empty>このアプリのお金の単位は「ポイント」だけです。実際のお金は使いません。</div>`);
+  else if(STP==1)b=sec('👑 プレミアム（30日・2,000pt）',[['🚫','広告バー非表示','ホーム画面の広告を消します'],['🎁','ログインボーナス 100pt','通常は10pt'],['💰','収益ポイント +10%','獲得した収益に10%上乗せ'],['📝','下書き枠 +30','下書き箱の上限が拡大'],['👑','PREMIUMバッジ','名前の横に表示']].map(x=>srow(x[0],x[1],x[2],'')).join('')+`<div style="padding:12px"><button class="btn w" style="margin:0;width:100%" onclick="buyPrem()">${pm?'30日延長する':'プレミアムを始める'}　2,000pt</button></div>`);
+  else if(STP==2)b=sec('🎨 テーマ',CXT.map(cxRow).join(''))+sec('🖼 アイコン枠',CXF.map(cxRow).join(''))+sec('🛒 ポイントショップ',shopH());
+  else if(STP==3)b=sec('🏷 称号（名前の横に表示）',TTL.map((t,i)=>{const k=t[0]+t[1],own=(P.tts||[]).includes(k);return srow(t[0],t[1],'みんなに見える称号',`<button class="btn${own?' o':''}" onclick="buyTt(${i})">${P.tt===k?'装備中':own?'装備':t[2]+'pt'}</button>`)}).join(''));
+  else if(STP==4)b=sec('🧰 アイテム',ITM.map(x=>srow(x[1],x[2],x[4],`<button class=btn onclick="buyItm('${x[0]}')">${x[3]}pt</button>`)).join(''));
+  else b=sec('🧾 購入履歴',list((P.ord||[]).filter(o=>o.c>0),o=>srow('🛍',esc(o.n),ago(o.d),`<b>−${o.c}pt</b>`),'購入履歴はありません'));
+  return hd+seg(['⭐貯め方','👑プレミアム','🎨着せ替え','🏷称号','🧰アイテム','🧾履歴'],STP,'stSeg')+b}
+const storeSec=()=>sec('🛍 ストア',`<div class=empty>所持 ⭐${P.pt||0}pt${prem()?'　👑プレミアム中':''}</div><div style="padding:0 14px 12px"><button class="btn w" style="margin:0;width:100%" onclick="go('store','x')">ストアを開く</button></div>`);
 const supB=n=>{const t=n===P.name?P.gt||0:(PR[n]||{}).sup||0,s=SUP.find(x=>t>=x[0]),tt=n===P.name?P.tt:(PR[n]||{}).tt,pm=n===P.name?prem():((PR[n]||{}).pm||0)>Date.now();
   return (pm?' <span class=badge style="background:#e08a00">👑</span>':'')+(tt?` <span class=badge style="background:#8a3ffc">${esc(tt)}</span>`:'')+(s?` <span class=badge style="background:#e08a00">${s[1]}${s[2]}サポーター</span>`:'')};
+
+/* ---------- 6分以上画面を開いていなかったら自動リロード ---------- */
+if(P.cn){P.pt=(P.pt||0)+P.cn*5;P.cn=0;save()} // 旧コインはポイントに換算（1コイン=5pt）
+let HID_AT=0;
+document.addEventListener('visibilitychange',()=>{if(document.hidden){HID_AT=Date.now();try{save()}catch(e){}}else{const t=HID_AT;HID_AT=0;if(t&&Date.now()-t>=36e4){try{sessionStorage.setItem('nn_rl','1')}catch(e){}location.reload()}}});
+try{if(sessionStorage.getItem('nn_rl')){sessionStorage.removeItem('nn_rl');setTimeout(()=>toast('🔄 しばらく開いていなかったので最新の状態に更新しました'),800)}}catch(e){}
 
 /* ---------- navigation ---------- */
 const TABS=[['🏠','ホーム',home],['🔍','検索',search],['🏆','ランキング',ranking],['✏️','投稿',post],['📚','本棚',library],['🙂','プロフ',profile]];
