@@ -112,6 +112,8 @@ input:focus,textarea:focus,select:focus{outline:2px solid var(--c2);box-shadow:0
 nav button span{position:relative;display:block}.nd{position:absolute;top:0;right:-5px;width:9px;height:9px;background:var(--red);border-radius:50%;animation:pls 1.4s infinite}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 mark{background:#ffe066;color:#111;border-radius:3px;padding:0 1px}#pgb{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--c1),var(--c2),var(--c4));z-index:50;transition:width .15s}
+nav button:nth-child(6).on{color:var(--c1)}nav button{font-size:9.5px}
+:root[data-th=light]{--bg:#f2f2f7;--card:#fff;--fg:#111;--sub:#6b6b73;--line:#e3e3e8;--acd:#3f7d00}:root[data-th=dark]{--bg:#000;--card:#1c1c1e;--fg:#f5f5f7;--sub:#9a9aa2;--line:#2c2c2e;--acd:#a6f21a}.body.mj{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
 </style>
 </head>
 <body>
@@ -145,16 +147,16 @@ async function cloudPush(){
    if(P.name&&P.name!=='未設定'){const d={bio:P.bio,following:fl()},j=JSON.stringify(d);if(hs.pf!==j){await api('nn_profiles?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{id:P.name,data:d,updated_at:new Date().toISOString()}])});hs.pf=j}}
    cloud='同期済み '+new Date().toLocaleTimeString()}catch(e){cloud='エラー（supabase_reset.sql を実行しましたか？）'}}
 function mergeIn(l,r){const o=(r.u||0)>(l.u||0)?{...l,...r}:{...r,...l};
-  for(const k of['likes','marks','subs'])if(l[k]||r[k])o[k]=[...(r[k]||[]).filter(v=>v!==P.name),...(l[k]||[]).filter(v=>v===P.name)];
+  for(const k of['likes','marks','subs','rd'])if(l[k]||r[k])o[k]=[...(r[k]||[]).filter(v=>v!==P.name),...(l[k]||[]).filter(v=>v===P.name)];
   if(l.comments||r.comments){const m=new Map();[...(l.comments||[]),...(r.comments||[])].forEach(c=>m.set(c.a+c.d,c));o.comments=[...m.values()]}if(l.parts||r.parts){const m=new Map();[...(l.parts||[]),...(r.parts||[])].forEach(c=>m.set(c.a+c.d,c));o.parts=[...m.values()].sort((a,b)=>a.d-b.d);o.body=o.parts.map(x=>x.t).join('\n\n')}if(l.rx||r.rx){o.rx={};for(const x of new Set([...Object.keys(l.rx||{}),...Object.keys(r.rx||{})]))o.rx[x]=[...((r.rx||{})[x]||[]).filter(v=>v!==P.name),...((l.rx||{})[x]||[]).filter(v=>v===P.name)]}return o}
 async function cloudPull(){
   try{let ch=0;for(const[t,k]of TB){const rows=await api(t+'?select=data&order=updated_at.desc&limit=500');
     for(const{data:r}of rows){const i=D[k].findIndex(x=>x.id===r.id);
       if(i<0){D[k].push(r);ch++;const{u,...c}=r;hs[r.id]=JSON.stringify(c)}
       else if(!skip(D[k][i])){const m=mergeIn(D[k][i],r);if(JSON.stringify(m)!==JSON.stringify(D[k][i])){D[k][i]=m;ch++}}}}
-   (await api('nn_profiles?select=id,data&limit=1000')).forEach(x=>PR[x.id]=x.data);
+   (await api('nn_profiles?select=id,data&id=not.like.~*&limit=1000')).forEach(x=>PR[x.id]=x.data);claimG();
    cloud='同期済み '+new Date().toLocaleTimeString();
-   if(ch){save();if(!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))render()}}catch(e){cloud='エラー（supabase_reset.sql を実行しましたか？）'}}
+   if(ch){save();if(!lv&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))render()}}catch(e){cloud='エラー（supabase_reset.sql を実行しましたか？）'}}
 const cdel=(t,id)=>api(t+'?id=eq.'+encodeURIComponent(id),{method:'DELETE'}).catch(()=>{});
 async function cloudWipe(){if(!confirm('クラウド上の「'+P.name+'」の作品とRoomをすべて削除します。よろしいですか？'))return;
   try{for(const[t]of TB)await api(t+'?author=eq.'+encodeURIComponent(P.name),{method:'DELETE'});await api('nn_profiles?id=eq.'+encodeURIComponent(P.name),{method:'DELETE'});toast('クラウドの自分のデータを削除しました')}catch(e){toast('削除できませんでした')}}
@@ -164,7 +166,7 @@ const newEp=()=>({title:'',desc:'',tags:'',room:'',body:'',pub:true,fol:false,im
 const Fm={n:newEp(),e:{},r:{title:'',desc:'',img:''},l:{title:''},rl:{title:'',desc:'',text:''}};
 let cur='n';Object.assign(Fm.n,L('nn_draft',{}));
 const fl=()=>P.following.split(',').filter(Boolean);
-const vis=e=>(e.pub&&(!e.at||e.at<=Date.now()))||e.author===P.name;
+const vis=e=>((e.pub&&(!e.at||e.at<=Date.now()))&&!(P.mu||[]).includes(e.author))||e.author===P.name;
 const rm=id=>D.rooms.find(r=>r.id===id);
 const byLikes=a=>[...a].sort((x,y)=>y.likes.length-x.likes.length);
 
@@ -202,10 +204,10 @@ function mis(k){const d=new Date().toDateString();if(!P.dm||P.dm.d!==d)P.dm={d,d
 function missionCard(){const d=P.dm&&P.dm.d===new Date().toDateString()?P.dm.done:{},n=MS.filter(m=>d[m[0]]).length;
   return `<h3>デイリーミッション（${n}/${MS.length}）</h3><div class=card>${MS.map(m=>`<div class=row style="cursor:default"><span>${d[m[0]]?'✅':'⬜'}</span><div class=grow>${m[1]}</div><small>+10pt</small></div>`).join('')}<div class=empty>所持ポイント：<b>${P.pt||0}pt</b>　全達成ボーナス +20pt</div></div>`}
 const events=()=>`<h3>開催イベント概要</h3><div class=card>${[['🏆','冬の短編コンテスト','11/20〜12/20 ｜ 5,000字以内・テーマ「はじまり」'],['📂','Room開設キャンペーン','11月末まで ｜ 新規Room開設で限定バッジ'],['🎙','ライブ配信フェス','12/5 20:00〜 ｜ 人気作家が朗読＆雑談'],['🎯','ミッション週間','毎日達成でポイント2倍']].map(e=>`<div class=row style="cursor:default"><span style="font-size:24px">${e[0]}</span><div class=grow><b>${e[1]}</b><small>${e[2]}</small></div></div>`).join('')}</div>`;
-function liveSec(){if(!LIVES.length)return `<h3 style="margin-left:0">ライブ配信</h3><div class=card style="margin:0"><div class=empty>配信中のライブはありません。「投稿」タブの「ライブ」から始められます</div></div>`;return `<h3 style="margin-left:0">今人気のライブ配信</h3><div class=strip style="margin:0 -16px">${LIVES.slice(0,10).map(n=>`<div onclick="startLive('${q(n)}')"><div class=ring>🎥</div>${esc(n)}<br><span class=badge>LIVE</span><small>👀 ${100+hue(n)*3}</small></div>`).join('')}</div>`}
+function liveSec(){return `<h3 style="margin-left:0">ライブ配信</h3><div id=ls>${liveStrip()}</div>`}
 function homeL(){
   const all=D.eps.filter(vis).filter(e=>!Q||[e.title,e.author,...e.tags].some(s=>s.includes(Q))||(rm(e.room)?.title||'').includes(Q));
-  const age=x=>1+(Date.now()-x.date)/864e5,f=fl(),rooms=D.rooms.filter(r=>!Q||[r.title,r.author].some(s=>s.includes(Q)));
+  const age=x=>1+(Date.now()-x.date)/864e5,f=fl(),rooms=D.rooms.filter(r=>!(P.mu||[]).includes(r.author)&&(!Q||[r.title,r.author].some(s=>s.includes(Q))));
   const newest=[...all].sort((a,b)=>b.date-a.date),lk={};
   D.eps.filter(vis).forEach(e=>lk[e.author]=(lk[e.author]||0)+e.likes.length);
   const au=Object.keys(lk).filter(a=>a!=='運営').sort((a,b)=>lk[b]-lk[a]),rec=au.filter(a=>a!==P.name&&!f.includes(a)).slice(0,10),none='<div class=empty>対象がありません</div>';
@@ -217,14 +219,14 @@ function homeL(){
    +`<h3>🌟 TOPクリエイター</h3><div class=strip>${au.slice(0,20).map(crCard).join('')||none}</div>`
    +`<h3>💡 おすすめのクリエイター</h3><div class=strip>${rec.map(crCard).join('')||none}</div>`+cds('🤝 リレー小説（参加募集中）',all.filter(e=>e.rl&&(e.parts||[]).length<20).slice(0,10))+events()+weekly()+missionCard();
 }
-function home(){return `<div class=pad><input id=sq placeholder="作者・タイトル・タグ・ライブ・room" value="${esc(Q)}" oninput="Q=this.value;$('#hl').innerHTML=homeL()"><div class=hero><div class=logo>小説note</div><i style="right:6%;top:0;font-size:26px;color:#ffb300">★</i><i style="right:24%;top:30px;color:#ff4fa3;animation-delay:-1s">✦</i><i style="left:58%;top:-4px;color:#2f6bff;animation-delay:-2s">●</i><i style="right:0;top:48px;color:#11c27a;animation-delay:-3s">▲</i></div>${adBar()}${homeX()}${liveSec()}<div id=hl style="margin:0 -16px">${homeL()}</div></div>`}
+function home(){return `<div class=pad><input id=sq placeholder="🔍 作品・作者・タグ・Roomを検索" readonly onclick="setTab(1)" style="cursor:pointer"><div class=hero><div class=logo>小説note</div><i style="right:6%;top:0;font-size:26px;color:#ffb300">★</i><i style="right:24%;top:30px;color:#ff4fa3;animation-delay:-1s">✦</i><i style="left:58%;top:-4px;color:#2f6bff;animation-delay:-2s">●</i><i style="right:0;top:48px;color:#11c27a;animation-delay:-3s">▲</i></div>${adBar()}${homeX()}${liveSec()}<div id=hl style="margin:0 -16px">${homeL()}</div></div>`}
 
 function ranking(){
   const e=D.eps.filter(vis),t=byLikes(e).slice(0,40);
-  return `<h1 class=lt>ランキング (日替わり)</h1>`+sec('🏆 TOP 作品40',list(t,epRow))
+  return `<h1 class=lt>ランキング (日替わり)</h1><div style="padding:0 16px">${rankBar()}</div>`+sec('🏆 TOP 作品40',list(t,epRow))
    +sec('📂 TOP room40',list([...D.rooms].sort((a,b)=>b.subs.length-a.subs.length).slice(0,40),rmRow))
    +sec('🆕 最新の作品40',list([...e].sort((a,b)=>b.date-a.date).slice(0,40),epRow))
-   +sec('👑 連続TOPの作品',list(t.slice(0,5),epRow));
+   +sec('👑 連続TOPの作品',list(t.slice(0,5),epRow))+mvp();
 }
 
 function ed(k){
@@ -234,7 +236,7 @@ function ed(k){
   <input placeholder="説明（あらすじ）" value="${esc(f.desc)}" oninput="Fm.${k}.desc=this.value;chk()">
   <input placeholder="タグ(カンマ区切り)" value="${esc(f.tags)}" oninput="Fm.${k}.tags=this.value;chk()">
   <select onchange="Fm.${k}.room=this.value;chk()"><option value="">単作 (Roomなし)</option>${D.rooms.filter(r=>r.author===P.name).map(r=>`<option value="${r.id}" ${f.room===r.id?'selected':''}>${esc(r.title)}</option>`).join('')}</select>
-  <label class=row style="display:block">${f.img?`<img src="${f.img}" style="width:70px;height:94px;object-fit:cover;border-radius:8px">`:'🖼 表紙を選択（なしなら自動生成）'}<input type=file accept="image/*" hidden onchange="readImg(this.files[0],400,d=>{Fm.${k}.img=d;render()})"></label><textarea placeholder="本文" oninput="Fm.${k}.body=this.value;chk();$('#cc').textContent=ccT(this.value.length)">${esc(f.body)}</textarea><small id=cc style="padding:0 14px 8px">${ccT(f.body.length)}</small><div class=tb style="padding:0 14px"><button onclick="lint()">🔍 推敲チェック</button><button onclick="cmOpen()">🎨 表紙メーカー</button></div>
+  <label class=row style="display:block">${f.img?`<img src="${f.img}" style="width:70px;height:94px;object-fit:cover;border-radius:8px">`:'🖼 表紙を選択（なしなら自動生成）'}<input type=file accept="image/*" hidden onchange="readImg(this.files[0],400,d=>{Fm.${k}.img=d;render()})"></label><textarea placeholder="本文" oninput="Fm.${k}.body=this.value;chk();$('#cc').textContent=ccT(this.value.length)">${esc(f.body)}</textarea><small id=cc style="padding:0 14px 8px">${ccT(f.body.length)}</small><div class=tb style="padding:0 14px"><button onclick="lint()">🔍 推敲チェック</button><button onclick="cmOpen()">🎨 表紙メーカー</button>${k==='n'?'<button onclick="dSave()">💾 下書き保存</button><button onclick="dOpen()">📂 下書き箱</button>':''}</div>
   <label class=tg>予約投稿<input type=datetime-local style="width:auto" value="${f.at?new Date(f.at-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16):''}" onchange="Fm.${k}.at=this.value?new Date(this.value).getTime():0"></label><label class=tg>パブリック（非公開オフ）<input type=checkbox ${f.pub?'checked':''} onchange="Fm.${k}.pub=this.checked;chk()"></label>
   <label class=tg style="border:0">フォロワー限定<input type=checkbox ${f.fol?'checked':''} onchange="Fm.${k}.fol=this.checked;chk()"></label></div>
   <button id=sb class="btn w" ${ok?'':'disabled'} onclick="submitEp('${k}')">${edit?'更新する':'投稿する'}</button>
@@ -244,7 +246,7 @@ const chk=()=>{const f=Fm[cur];$('#sb').disabled=!(f.title&&f.desc&&f.body);if(c
 function submitEp(k){
   const f=Fm[k],tags=f.tags.split(',').map(s=>s.trim()).filter(Boolean);
   if(k==='e'){const e=D.eps.find(x=>x.id===f.id);Object.assign(e,{title:f.title,desc:f.desc,body:f.body,pub:f.pub,fol:f.fol,room:f.room,tags,img:f.img||'',at:f.at||0});stack.pop();toast('更新しました')}
-  else{D.eps.push({id:uid(),title:f.title,desc:f.desc,body:f.body,author:P.name,room:f.room,likes:[],marks:[],tags,pub:f.pub,fol:f.fol,date:Date.now(),comments:[],img:f.img||'',at:f.at||0});mis('post');const bn=evPost(tags,f.body);Fm.n=newEp();try{localStorage.removeItem('nn_draft')}catch(e){}tab=0;stack=[];toast('投稿しました'+(bn?'　🎁イベントボーナス +'+bn+'pt':''))}
+  else{D.eps.push({id:uid(),title:f.title,desc:f.desc,body:f.body,author:P.name,room:f.room,likes:[],marks:[],tags,pub:f.pub,fol:f.fol,date:Date.now(),comments:[],img:f.img||'',at:f.at||0});mis('post');const bn=evPost(tags,f.body);if(f.did&&P.dr)P.dr=P.dr.filter(x=>x.id!==f.did);Fm.n=newEp();try{localStorage.removeItem('nn_draft')}catch(e){}tab=0;stack=[];toast('投稿しました'+(bn?'　🎁イベントボーナス +'+bn+'pt':''))}
   save();render(1);
 }
 function roomForm(){const f=Fm.r;return `<div class=card><input placeholder="Room名" value="${esc(f.title)}" oninput="Fm.r.title=this.value;$('#rb').disabled=!this.value">
@@ -263,18 +265,18 @@ function reader(id){
   const liked=e.likes.includes(me),bm=e.marks.includes(me),last=e.comments.length&&e.comments[e.comments.length-1].a===me;
   return `<div id=pgb></div><div class=pad><div style="display:flex;justify-content:center;margin-bottom:10px">${cov(e,120,160)}</div><div style="display:flex;align-items:center;gap:8px"><h1 style="margin:0;flex:1;font-size:28px">${esc(e.title)}</h1>${e.author===me?`<button class=del title="編集" onclick="editEp('${e.id}')">✏️</button>`:''}</div>
   <a style="color:var(--acd);font-weight:700;cursor:pointer" onclick="go('author','${q(e.author)}')">作者: ${esc(e.author)} (タップでフォロー)</a>
-  ${e.tags.length?`<small>${e.tags.map(t=>'#'+esc(t)).join(' ')}</small>`:''}
+  ${e.tags.length?`<small>${e.tags.map(t=>`<a style="color:var(--acd);cursor:pointer;margin-right:6px" onclick="srTag('${q(t)}')">#${esc(t)}</a>`).join('')}</small>`:''}
   <p style="color:var(--sub);font-size:14px">${esc(e.desc)}</p><hr style="border:0;border-top:1px solid var(--line)">
-  <small style="margin-top:8px">${ago(e.date)}・${nc}字・約${Math.max(1,Math.round(nc/500))}分で読めます</small>
-  <div class=tb><button onclick="rs('fs',-1)">A−</button><button onclick="rs('fs',1)">A＋</button><button onclick="rs('th')">${['☀️ ライト','📜 セピア','🌙 ダーク'][R.th]}</button><button style="${R.vert?'background:var(--ac);color:#111':''}" onclick="rs('vert')">縦書き</button><button onclick="speak('${e.id}')">🔊 読み上げ</button><button onclick="copyEp('${e.id}')">📋 コピー</button><button onclick="dlEp('${e.id}')">⬇ .txt</button><button onclick="quoteCard('${e.id}')">🖼 名言カード</button><button onclick="hlSave('${e.id}')" onmousedown="event.preventDefault()">🖍 ハイライト</button><button onclick="emoG('${e.id}')">📈 感情グラフ</button><button onclick="bgm()">${['🎵 BGM','🌧 雨','🌊 波','🔥 焚き火','🌬 風'][BGk]}</button><button onclick="sleepT()">${SLP?'😴 ON':'😴 30分'}</button></div>
-  <div class="body ${['','sepia','dk'][R.th]} ${R.vert?'vert':''}" style="font-size:${R.fs}px">${hlBody(e)}</div>
-  ${e.rl?relayH(e):''}${rnav(e)}<div class=acts><button style="color:${liked?'#ff2d78':''}" onclick="like('${e.id}')">${liked?'♥':'♡'} ${e.likes.length}</button><button style="color:${bm?'#2f6bff':''}" onclick="mark('${e.id}')">${bm?'🔖':'📑'}</button></div>
-  <div class=tb>${RXE.map(x=>`<button style="${((e.rx||{})[x]||[]).includes(me)?'background:var(--ac);color:#111':''}" onclick="react('${e.id}','${x}')">${x} ${((e.rx||{})[x]||[]).length}</button>`).join('')}</div><h3 style="margin:0 0 8px">感想</h3>
+  <small style="margin-top:8px">${ago(e.date)}・${nc}字・約${Math.max(1,Math.round(nc/500))}分で読めます・👀 ${(e.rd||[]).length}人が閲覧</small>
+  <div class=tb><button onclick="rs('fs',-1)">A−</button><button onclick="rs('fs',1)">A＋</button><button onclick="rs('th')">${['☀️ ライト','📜 セピア','🌙 ダーク'][R.th]}</button><button onclick="rs('ff')">${R.ff?'🔤 明朝':'🔤 ゴシック'}</button><button style="${R.vert?'background:var(--ac);color:#111':''}" onclick="rs('vert')">縦書き</button><button onclick="speak('${e.id}')">🔊 読み上げ</button><button onclick="copyEp('${e.id}')">📋 コピー</button><button onclick="dlEp('${e.id}')">⬇ .txt</button><button onclick="quoteCard('${e.id}')">🖼 名言カード</button><button onclick="hlSave('${e.id}')" onmousedown="event.preventDefault()">🖍 ハイライト</button><button onclick="emoG('${e.id}')">📈 感情グラフ</button><button onclick="bgm()">${['🎵 BGM','🌧 雨','🌊 波','🔥 焚き火','🌬 風'][BGk]}</button><button onclick="sleepT()">${SLP?'😴 ON':'😴 30分'}</button></div>
+  <div class="body ${['','sepia','dk'][R.th]} ${R.vert?'vert':''} ${R.ff?'mj':''}" style="font-size:${R.fs}px">${hlBody(e)}</div>
+  ${e.rl?relayH(e):''}${rnav(e)}<div class=acts><button style="color:${liked?'#ff2d78':''}" onclick="like('${e.id}')">${liked?'♥':'♡'} ${e.likes.length}</button><button style="color:${bm?'#2f6bff':''}" onclick="mark('${e.id}')">${bm?'🔖':'📑'}</button><button style="color:${(P.lt||[]).includes(e.id)?'#e08a00':''}" onclick="later('${e.id}')">${(P.lt||[]).includes(e.id)?'📌 あとで':'📍 あとで読む'}</button><button style="color:${(P.dn||{})[e.id]?'#11a35a':''}" onclick="done('${e.id}')">${(P.dn||{})[e.id]?'✅ 読了':'☑ 読了'}</button></div>
+  <div class=tb>${RXE.map(x=>`<button style="${((e.rx||{})[x]||[]).includes(me)?'background:var(--ac);color:#111':''}" onclick="react('${e.id}','${x}')">${x} ${((e.rx||{})[x]||[]).length}</button>`).join('')}</div>${simil(e)}<h3 style="margin:0 0 8px">感想</h3>
   <div style="display:flex;gap:8px"><input id=ci placeholder="コメント..." oninput="$('#cs').disabled=!this.value||${!!last}"><button id=cs class=btn disabled onclick="sendC('${e.id}')">送信</button></div>
   ${last?'<small style="color:var(--red)">連続でコメントはできません</small>':''}
-  ${[...e.comments].sort((a,b)=>b.d-a.d).map(c=>`<div class=cm><small><b>${esc(c.a)}</b></small>${esc(c.t)}</div>`).join('')}</div>`;
+  ${e.comments.filter(c=>!(P.mu||[]).includes(c.a)).sort((a,b)=>b.d-a.d).map(c=>`<div class=cm><small><b>${esc(c.a)}</b>・${ago(c.d)} ${c.a!==me?`<a style="color:var(--acd);cursor:pointer" onclick="reply('${q(c.a)}')">↩ 返信</a>`:''}</small>${mention(c.t)}</div>`).join('')}</div>`;
 }
-function rs(k,d){const r=P.r;if(k==='fs')r.fs=Math.min(30,Math.max(12,r.fs+d));else if(k==='th')r.th=(r.th+1)%3;else r.vert=1-r.vert;save();render()}
+function rs(k,d){const r=P.r;if(k==='fs')r.fs=Math.min(30,Math.max(12,r.fs+d));else if(k==='th')r.th=(r.th+1)%3;else if(k==='ff')r.ff=1-(r.ff||0);else r.vert=1-r.vert;save();render()}
 function speak(id){const s=window.speechSynthesis;if(!s)return toast('この端末は読み上げ非対応です');if(s.speaking){s.cancel();return}const e=D.eps.find(x=>x.id===id),u=new SpeechSynthesisUtterance(e.title+'。'+e.body);u.lang='ja-JP';s.speak(u);toast('読み上げ中（もう一度押すと停止）')}
 const epTxt=id=>{const e=D.eps.find(x=>x.id===id);return e.title+'\n作者: '+e.author+'\n\n'+e.desc+'\n\n'+e.body};
 function copyEp(id){(navigator.clipboard?navigator.clipboard.writeText(epTxt(id)):Promise.reject()).then(()=>toast('コピーしました'),()=>toast('コピーできませんでした'))}
@@ -297,7 +299,7 @@ function author(n){
   const f=fl().includes(n),top=[...new Set(byLikes(D.eps.filter(vis)).slice(0,40).map(e=>e.author))].includes(n)&&n!=='運営';
   const bio=n===P.name?P.bio:((PR[n]||{}).bio||(LIVES.includes(n)?'公式・人気アカウント':'自己紹介はまだありません'));
   const eps=D.eps.filter(e=>e.author===n&&vis(e)),rs=D.rooms.filter(r=>r.author===n);
-  return `<div style="text-align:center;padding:20px">${av(n,100)}<h1 style="margin:12px 0 4px">${esc(n)}</h1>${top?'<div style="display:inline-block;color:#e08a00;background:#ffa50022;padding:6px 12px;border-radius:8px;font-weight:700">🌟 TOPクリエイター</div>':''}<p style="color:var(--sub);margin:8px 0">${esc(bio)}</p><div style="display:flex;justify-content:center;gap:28px;margin:10px 0 14px"><div><b>${fol(n)}</b><small>フォロワー</small></div><div><b>${eps.length}</b><small>作品</small></div><div><b>${rs.length}</b><small>Room</small></div></div>${n===P.name?'':`<button class=btn onclick="follow('${q(n)}')">${f?'フォロー解除':'フォローする'}</button>`}</div>`
+  return `<div style="text-align:center;padding:20px">${av(n,100)}<h1 style="margin:12px 0 4px">${esc(n)}</h1>${top?'<div style="display:inline-block;color:#e08a00;background:#ffa50022;padding:6px 12px;border-radius:8px;font-weight:700">🌟 TOPクリエイター</div>':''}<p style="color:var(--sub);margin:8px 0">${esc(bio)}</p><div style="display:flex;justify-content:center;gap:28px;margin:10px 0 14px"><div><b>${fol(n)}</b><small>フォロワー</small></div><div><b>${eps.length}</b><small>作品</small></div><div><b>${rs.length}</b><small>Room</small></div></div>${n===P.name?'':`<button class=btn onclick="follow('${q(n)}')">${f?'フォロー解除':'フォローする'}</button> <button class="btn o" onclick="mute('${q(n)}')">${(P.mu||[]).includes(n)?'ミュート解除':'ミュート'}</button>`}</div>`
    +cds('📂 Room',rs,1)+sec('作品',list(eps,epRow,'まだ作品がありません'));
 }
 function follow(n){n=decodeURIComponent(n);if(n==='運営'){toast('運営のアカウントはフォローできません。');return}const l=fl(),i=l.indexOf(n);i<0?l.push(n):l.splice(i,1);P.following=l.join(',');save();render()}
@@ -314,7 +316,7 @@ function library(){
   return `<h1 class=lt>本棚</h1>`
    +sec('自分の作品',list(eps,e=>`<div class=row>${cov(e,40,54)}<div class=grow onclick="go('ep','${e.id}')"><b>${esc(e.title)}</b> ${e.pub?'':'🙈'}<small>${esc(e.author)}・${ago(e.date)}・❤️ ${e.likes.length}</small></div><button class=del onclick="delEp('${e.id}')">🗑</button></div>`,'まだ作品がありません'))
    +sec('自分のRoom',list(rs,r=>`<div class=row>${cov(r,40,54)}<div class=grow onclick="go('room','${r.id}')"><b>${esc(r.title)}</b><small>${esc(r.author)}・${ago(r.date)}・${r.subs.length}購読</small></div><button class=del onclick="delRoom('${r.id}')">🗑</button></div>`,'まだRoomがありません'))
-   +sec('🖍 ハイライト帳（'+(P.hl||[]).length+'）',list(P.hl||[],hlRow,'本文の一節を選んで「🖍 ハイライト」を押すと保存されます'))+sec('ブックマーク',list(D.eps.filter(e=>e.marks.includes(me)&&vis(e)),epRow,'ブックマークはありません'));
+   +lib2()+sec('🖍 ハイライト帳（'+(P.hl||[]).length+'）',list(P.hl||[],hlRow,'本文の一節を選んで「🖍 ハイライト」を押すと保存されます'))+sec('ブックマーク',list(D.eps.filter(e=>e.marks.includes(me)&&vis(e)),epRow,'ブックマークはありません'));
 }
 function delEp(id){if(confirm('この作品を削除しますか？')){D.eps=D.eps.filter(e=>e.id!==id);cdel('nn_episodes',id);save();render()}}
 function delRoom(id){if(confirm('このRoomを削除しますか？')){D.rooms=D.rooms.filter(r=>r.id!==id);cdel('nn_rooms',id);D.eps.forEach(e=>{if(e.room===id)e.room=''});save();render()}}
@@ -328,7 +330,7 @@ function profile(){
   <div style="display:flex;margin-top:12px"><div class=grow onclick="openSheet('フォロー中')" style="cursor:pointer"><b>${fl().length}</b><small>フォロー中</small></div><div class=grow onclick="openSheet('フォロワー')" style="cursor:pointer"><b>${fol(P.name)}</b><small>フォロワー</small></div></div></div>`
   +sec('通知カスタム',nt.map(([k,t])=>`<label class=tg>${t}<input type=checkbox ${n[k]?'checked':''} onchange="P.n.${k}=this.checked;save()"></label>`).join(''))
   +sec('📊 執筆記録',stats())+sec('🗓 読む・書くカレンダー',heat())+sec('🛒 ポイントショップ（'+(P.pt||0)+'pt）',shopH())
-  +sec('☁️ クラウド同期',`<div class=empty>状態：${esc(cloud)}</div><div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px"><button class="btn o" onclick="cloudPull().then(cloudPush).then(()=>render())">今すぐ同期</button><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="cloudWipe()">自分のクラウド投稿を削除</button></div>`)
+  +extra()+sec('☁️ クラウド同期',`<div class=empty>状態：${esc(cloud)}</div><div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px"><button class="btn o" onclick="cloudPull().then(cloudPush).then(()=>render())">今すぐ同期</button><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="cloudWipe()">自分のクラウド投稿を削除</button></div>`)
   +sec('💾 バックアップ',`<div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px"><button class="btn o" onclick="bkExp()">書き出し(JSON)</button><label class="btn o">読み込み<input type=file accept=".json" hidden onchange="bkImp(this.files[0])"></label><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="wipeLocal()">この端末を初期化</button></div>`);
 }
 const openSheet=t=>{sheet={t,u:t==='フォロー中'?fl():[]};render()};
@@ -336,41 +338,59 @@ const openSheet=t=>{sheet={t,u:t==='フォロー中'?fl():[]};render()};
 /* ---------- live ---------- */
 const BOTS=['みかん','ゆず','たろう','ルナ','そら','ひなた'],BC=['続きが気になる！','声きれい✨','待ってました！','朗読最高','初見です','いい話だ…😭','ワクワクする','拍手👏'],GF=[['⭐','スター',10],['🌹','バラ',30],['👑','王冠',100]];
 const rnd=a=>a[Math.floor(Math.random()*a.length)],mm=t=>String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
-function startLive(n){n=decodeURIComponent(n);const host=n===P.name;
-  lv={a:n,host,title:host?(Fm.l.title||'ライブ配信'):n+'のライブ',rec:!host,fx:0,v:host?0:100+hue(n)*3,pk:0,h:0,g:0,c:[{n:'運営',t:'ようこそ！'}],nc:'',pin:host?'':'ハートとギフトで応援してね🎁',ep:'',sc:0,gp:0,sec:0,done:0};
-  lv.t=setInterval(tick,1000);render()}
+function startLive(n){n=decodeURIComponent(n);const host=n===P.name;if(lv)return;if(P.name==='未設定')return toast('プロフィールで名前を設定してからライブに入れます');
+  lv={a:n,host,title:host?(Fm.l.title||'ライブ配信'):n+'のライブ',rec:1,v:0,pk:0,h:0,g:0,mh:0,fx:0,c:[],pin:'',nc:'',ep:'',sc:0,gp:0,sec:0,done:0,sp:{},busy:0};
+  lv.t=setInterval(tick,1000);render();liveSync()}
 function heart(){const f=$('#fx');if(!f)return;const i=document.createElement('i');i.className='hf';i.textContent=rnd(['❤️','💖','💛','💜','✨']);i.style.left=(10+Math.random()*80)+'%';f.appendChild(i);setTimeout(()=>i.remove(),1800)}
-function tick(){if(!lv||lv.done)return;
-  if(lv.rec){lv.sec++;
-    if(lv.sec%3==0){lv.v=Math.max(0,lv.v+Math.floor(Math.random()*5)-(lv.host?0:1));lv.pk=Math.max(lv.pk,lv.v)}
-    if(lv.sec%4==0){lv.c.push({n:rnd(BOTS),t:rnd(BC)});lv.c=lv.c.slice(-40);lcr()}
-    if(lv.sec%2==0&&lv.v>0){const k=lv.v>150?3:1;lv.h+=k;for(let i=0;i<k;i++)heart()}
-    if(lv.host&&lv.sec%15==0&&lv.v>0){lv.g+=rnd([10,30]);lv.c.push({n:rnd(BOTS),t:'🎁 ギフトを贈りました',g:1});lcr()}}
-  if(lv.sc&&$('#scr'))$('#scr').scrollTop+=40;
-  const t=(i,v)=>{const e=$('#'+i);if(e)e.textContent=v};t('vw',lv.v);t('hr',lv.h);t('gf',lv.g);t('el',mm(lv.sec))}
+const enc=encodeURIComponent,UP={Prefer:'resolution=merge-duplicates,return=minimal'};
+const lp=(id,data)=>api('nn_profiles?on_conflict=id',{method:'POST',headers:UP,body:JSON.stringify([{id,data,updated_at:new Date().toISOString()}])}).catch(()=>{});
+const lq=p=>api('nn_profiles?select=id,data&id=like.'+enc('~'+p+'*')).then(r=>r||[]).catch(()=>[]);
+const ld=p=>api('nn_profiles?id=like.'+enc('~'+p+'*'),{method:'DELETE'}).catch(()=>{});
+let CL=[];
+const liveStrip=()=>CL.length?`<div class=strip style="margin:0 -16px">${CL.map(x=>`<div onclick="startLive('${q(x.a)}')"><div class=ring>🎥</div>${esc(x.a)}<br><span class=badge>LIVE</span><small>👀 ${x.v||0}</small><small>${esc(String(x.t||'').slice(0,10))}</small></div>`).join('')}</div>`:`<div class=card style="margin:0"><div class=empty>配信中のライブはありません。「投稿」タブの「ライブ」から始められます</div></div>`;
+async function pollLives(){if(lv||document.hidden)return;const n=Date.now();CL=(await lq('live:')).map(r=>({a:r.id.slice(6),...r.data})).filter(x=>!x.end&&n-x.hb<20000&&x.a!==P.name&&!(P.mu||[]).includes(x.a));const e=$('#ls');if(e)e.innerHTML=liveStrip()}
+setInterval(pollLives,5000);
+async function claimG(){const o=[];try{P.gfc=P.gfc||[];for(const r of await lq('gf:'+P.name+':')){if(!P.gfc.includes(r.id)){P.gfc.push(r.id);P.pt=(P.pt||0)+r.data.pt;P.gr=(P.gr||0)+r.data.pt;o.push({f:r.data.f,pt:r.data.pt})}api('nn_profiles?id=eq.'+enc(r.id),{method:'DELETE'}).catch(()=>{})}P.gfc=P.gfc.slice(-200);if(o.length){save();boom();if(!lv)toast('🎁 投げ銭 +'+o.reduce((a,x)=>a+x.pt,0)+'pt を受け取りました')}}catch(e){}return o}
+function kick(){const l=lv;if(!l)return;clearInterval(l.t);lv=null;toast('配信が終了しました（解散）');render(1)}
+async function liveSync(){const l=lv;if(!l||l.busy||l.done)return;l.busy=1;const H=l.a,now=Date.now(),op=l.pin;
+  try{if(l.host){const vs=(await lq('lv:'+H+':')).map(r=>r.data).filter(d=>now-d.hb<12000),nh=vs.reduce((a,d)=>a+(d.h||0),0);
+      for(let i=0;i<Math.min(5,nh-l.h);i++)heart();l.v=vs.length;l.h=Math.max(l.h,nh);l.pk=Math.max(l.pk,l.v);
+      (await claimG()).forEach(x=>{l.g+=x.pt;l.sp[x.f]=(l.sp[x.f]||0)+x.pt});
+      if(!l.done)await lp('~live:'+H,{t:l.title,hb:now,h:l.h,v:l.v,pin:l.pin})}
+    else{const r=await api('nn_profiles?select=data&id=eq.'+enc('~live:'+H)),d=r&&r[0]&&r[0].data;
+      if(!d||d.end||now-d.hb>20000){l.busy=0;return kick()}
+      l.v=(d.v||0)+1;l.h=d.h||0;l.pin=d.pin||'';l.title=d.t||l.title;await lp('~lv:'+H+':'+P.name,{hb:now,h:l.mh})}
+    l.c=(await lq('lc:'+H+':')).map(r=>r.data).sort((a,b)=>a.d-b.d).slice(-40).filter(m=>!(P.mu||[]).includes(m.n))}catch(e){}
+  if(lv===l){l.busy=0;lcr();if(!l.host&&l.pin!==op)renderLive()}}
+addEventListener('pagehide',()=>{if(lv&&lv.host&&!lv.done)fetch(SB+'/rest/v1/nn_profiles?on_conflict=id',{method:'POST',keepalive:true,headers:{apikey:KEY,'Content-Type':'application/json',...UP},body:JSON.stringify([{id:'~live:'+lv.a,data:{end:1,hb:0},updated_at:new Date().toISOString()}])}).catch(()=>{})});
+function tick(){if(!lv||lv.done)return;lv.sec++;if(lv.sec%3==0)liveSync();if(lv.sc&&$('#scr'))$('#scr').scrollTop+=40;const t=(i,v)=>{const e=$('#'+i);if(e)e.textContent=v};t('vw',lv.v);t('hr',lv.h);t('gf',lv.g);t('el',mm(lv.sec))}
 const lcH=()=>lv.c.map((m,i)=>[m,i]).slice(lv.host?-30:-6).map(([m,i])=>`<div class="${lv.host?'lcm':''}" style="${m.g?'background:linear-gradient(90deg,#ff7a18,#ffd200);color:#111':''}"><b>${esc(m.n)}</b> ${esc(m.t)}${lv.host?`<button class=del style="font-size:13px" onclick="pinC(${i})">📌</button>`:''}</div>`).join('');
 const lcr=()=>{const e=$('#lc');if(e)e.innerHTML=lcH()};
 const pinC=i=>{lv.pin=lv.c[i].t;toast('固定しました');renderLive()};
 const recT=()=>{lv.rec=!lv.rec;if(lv.rec&&!lv.v)lv.v=3+Math.floor(Math.random()*5);renderLive()};
 const setFx=i=>{lv.fx=i;renderLive()},setEp=v=>{lv.ep=v;renderLive()},togSc=()=>{lv.sc=1-lv.sc;renderLive()},gp=()=>{lv.gp=1-lv.gp;renderLive()};
-function sendL(){const t=lv.nc.trim();if(!t)return;lv.c.push({n:P.name,t});lv.nc='';const i=$('#lci');if(i)i.value='';lcr()}
-const likeL=()=>{lv.h++;heart();heart();heart()};
-function gift(i){const g=GF[i];if((P.pt||0)<g[2])return toast('ポイントが足りません（ミッション・おみくじで貯めよう）');P.pt-=g[2];save();lv.c.push({n:P.name,t:g[0]+' '+g[1]+'を贈りました',g:1});boom();lcr();toast(g[0]+' を贈りました -'+g[2]+'pt')}
-function endLive(){if(lv.host&&lv.sec>0&&!lv.done){lv.done=1;P.pt=(P.pt||0)+lv.g+Math.floor(lv.pk/5);save();boom();renderLive();return}clearInterval(lv.t);lv=null;render()}
+function sendL(){const t=lv.nc.trim();if(!t)return;const m={n:P.name,t,d:Date.now()};lv.c.push(m);lv.nc='';const i=$('#lci');if(i)i.value='';lcr();lp('~lc:'+lv.a+':'+uid(),m)}
+const likeL=()=>{lv.mh=(lv.mh||0)+1;heart();heart();heart()};
+async function gift(i){const g=GF[i],H=lv.a;if((P.pt||0)<g[2])return toast('ポイントが足りません（ミッション・おみくじで貯めよう）');
+  try{await api('nn_profiles?on_conflict=id',{method:'POST',headers:UP,body:JSON.stringify([{id:'~gf:'+H+':'+uid(),data:{f:P.name,pt:g[2],d:Date.now()},updated_at:new Date().toISOString()}])});P.pt-=g[2];save();lp('~lc:'+H+':'+uid(),{n:P.name,t:g[0]+' '+g[1]+'を贈りました',d:Date.now(),g:1});boom();toast(g[0]+' を贈りました（'+H+'さんのポイントになります）')}catch(e){toast('送信できませんでした（通信エラー・ポイントは減っていません）')}}
+function endLive(){const l=lv;if(!l)return;
+  if(l.host&&!l.done){l.done=1;const H=l.a,end=()=>lp('~live:'+H,{end:1,hb:Date.now()});end();setTimeout(end,4000);ld('lc:'+H+':');ld('lv:'+H+':');
+    l.top=Object.entries(l.sp).sort((a,b)=>b[1]-a[1]).slice(0,3);P.pt=(P.pt||0)+Math.floor(l.pk/5);P.lh=P.lh||[];P.lh.unshift({t:l.title,d:Date.now(),sec:l.sec,pk:l.pk,h:l.h,g:l.g,sp:l.top});P.lh=P.lh.slice(0,30);save();boom();renderLive();return}
+  clearInterval(l.t);lv=null;if(!l.host)api('nn_profiles?id=eq.'+enc('~lv:'+l.a+':'+P.name),{method:'DELETE'}).catch(()=>{});render(1)}
 const inRow=()=>`<div style="display:flex;gap:8px;padding:12px 14px"><input id=lci placeholder="コメントを入力..." value="${esc(lv.nc)}" oninput="lv.nc=this.value" onkeydown="event.key=='Enter'&&sendL()"><button class=btn onclick="sendL()">送信</button></div>`;
 function hostH(){const sc=D.eps.find(x=>x.id===lv.ep);return `<div class=nb style="background:linear-gradient(90deg,#ff4fa3,#ffb300)"><span class=badge>LIVE</span><b style="flex:1;color:#111">${esc(lv.title)}</b><button style="color:#111" onclick="endLive()">配信終了</button></div>
 <div class=lvt><div><b id=vw>${lv.v}</b>👀 視聴者</div><div><b id=hr>${lv.h}</b>❤️</div><div><b id=gf>${lv.g}</b>🎁 pt</div><div><b id=el>${mm(lv.sec)}</b>⏱</div></div>
-<div class=vstage style="height:230px;align-items:center;justify-content:center"><div id=fx style="position:absolute;inset:0"></div><div class=ring style="border-color:#fff;width:84px;height:84px">${av(lv.a,70,'20px')}</div><button class=rec onclick="recT()"><i style="font-size:40px;font-style:normal">${lv.rec?'⏸':'⏺'}</i><br>${lv.rec?'配信中（タップで一時停止）':'タップで配信開始'}</button></div>
+<div class=vstage style="height:230px;align-items:center;justify-content:center"><div id=fx style="position:absolute;inset:0"></div><div class=ring style="border-color:#fff;width:84px;height:84px">${av(lv.a,70,'20px')}</div><div class=rec><i style="font-size:40px;font-style:normal">⏺</i><br>配信中</div></div>
 ${seg(['ノーマル','エコー','ロボット','天使'],lv.fx,'setFx')}
 <div style="padding:0 14px"><input placeholder="📌 固定コメント（視聴者に表示）" value="${esc(lv.pin)}" oninput="lv.pin=this.value"></div>
 <h3>📜 朗読台本</h3><div style="display:flex;gap:8px;padding:0 14px 8px"><select onchange="setEp(this.value)"><option value="">台本なし</option>${D.eps.filter(x=>x.author===P.name).map(x=>`<option value="${x.id}" ${lv.ep===x.id?'selected':''}>${esc(x.title)}</option>`).join('')}</select><button class="btn o" style="white-space:nowrap" onclick="togSc()">${lv.sc?'⏹ 自動':'▶ 自動'}スクロール</button></div>${sc?`<div class=scr id=scr>${esc(sc.body)}</div>`:''}
 <h3>💬 コメント</h3><div id=lc class=card style="padding:4px 12px">${lcH()}</div>${inRow()}`}
-function viewH(){return `<div class=vstage><div style="display:flex;align-items:center;gap:8px;padding:10px;position:relative;z-index:2">${av(lv.a,40)}<div class=grow><b>${esc(lv.a)}</b><small style="color:#fffc"><span class=badge>LIVE</span> 👀 <span id=vw>${lv.v}</span>・⏱ <span id=el>${mm(lv.sec)}</span></small></div><button class=btn style="padding:6px 12px" onclick="follow('${q(lv.a)}')">${fl().includes(lv.a)?'フォロー中':'＋フォロー'}</button><button class=rec style="font-size:20px" onclick="endLive()">✕</button></div>
+function viewH(){return `<div class=vstage><div style="display:flex;align-items:center;gap:8px;padding:10px;position:relative;z-index:2">${av(lv.a,40)}<div class=grow><b>${esc(lv.a)}</b><small style="color:#fffc"><span class=badge>LIVE</span> 👀 <span id=vw>${lv.v}</span>・⏱ <span id=el>${mm(lv.sec)}</span></small></div><button class=btn style="padding:6px 12px" onclick="follow('${q(lv.a)}')">${fl().includes(lv.a)?'フォロー中':'＋フォロー'}</button><button class=btn style="padding:6px 14px;background:var(--red);color:#fff" onclick="endLive()">退出</button></div>
 <div id=fx style="position:absolute;inset:0;pointer-events:none"></div>
 <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><div class=ring style="border-color:#fff;width:84px;height:84px">${av(lv.a,70)}</div><b>${esc(lv.title)}</b>${lv.pin?`<div style="background:#fff3;border-radius:10px;padding:3px 10px;font-size:13px">📌 ${esc(lv.pin)}</div>`:''}</div>
 <div id=lc class=vchat>${lcH()}</div><div class=vside><button onclick="likeL()">❤️</button><button onclick="gp()">🎁</button></div></div>
 ${lv.gp?`<div class=lvt>${GF.map((g,i)=>`<div onclick="gift(${i})" style="cursor:pointer;font-size:28px">${g[0]}<b style="font-size:12px">${g[2]}pt</b></div>`).join('')}<small style="width:100%;text-align:center">所持 ${P.pt||0}pt</small></div>`:''}${inRow()}`}
-const sumH=()=>`<div class=lock><div style="font-size:48px">🎉</div><h2>配信おつかれさま！</h2><div class=lvt><div><b>${mm(lv.sec)}</b>配信時間</div><div><b>${lv.pk}</b>最大視聴</div><div><b>${lv.h}</b>❤️</div><div><b>${lv.g}</b>🎁pt</div></div><p>ボーナス <b>+${lv.g+Math.floor(lv.pk/5)}pt</b> を獲得！</p><button class=btn onclick="endLive()">閉じる</button></div>`;
+const sumH=()=>`<div class=lock><div style="font-size:48px">🎉</div><h2>配信おつかれさま！</h2><div class=lvt><div><b>${mm(lv.sec)}</b>配信時間</div><div><b>${lv.pk}</b>最大視聴</div><div><b>${lv.h}</b>❤️</div><div><b>${lv.g}</b>🎁pt</div></div><p>🎁 投げ銭 <b>+${lv.g}pt</b>（受け取り済み）・視聴者ボーナス <b>+${Math.floor(lv.pk/5)}pt</b></p>${lv.top&&lv.top.length?'<p>🏅 応援TOP：'+lv.top.map(x=>esc(x[0])+' '+x[1]+'pt').join('、')+'</p>':''}<button class=btn onclick="endLive()">閉じる</button></div>`;
 function renderLive(){const e=$('#live');if(e)e.innerHTML=lv.done?sumH():lv.host?hostH():viewH()}
 
 /* ---------- 新機能 ---------- */
@@ -419,12 +439,12 @@ const shopH=()=>`<div class=row style="cursor:default"><div class=grow>標準に
 function buy(id){const x=SH.find(v=>v[0]===id),own=P.own=P.own||[];if(!own.includes(id)){if((P.pt||0)<x[2])return toast('ポイントが足りません（ミッション・おみくじ・ライブで貯めよう）');P.pt-=x[2];own.push(id);boom();toast(x[1]+' を手に入れた！')}equip(id)}
 function equip(id){if(!id){P.th='';P.fr=''}else if(id[0]=='t')P.th=id;else P.fr=id;save();applyTheme();render()}
 // 5) 通知センター
-function snap(){const e={},r={};D.eps.filter(x=>x.author===P.name).forEach(x=>e[x.id]=[x.likes.filter(v=>v!==P.name).length,x.comments.filter(c=>c.a!==P.name).length]);D.rooms.forEach(x=>r[x.id]=x.subs.filter(v=>v!==P.name).length);P.sn={e,r,f:fol(P.name)};save()}
+function snap(){const e={},r={};D.eps.filter(x=>x.author===P.name).forEach(x=>e[x.id]=[x.likes.filter(v=>v!==P.name).length,x.comments.filter(c=>c.a!==P.name).length]);D.rooms.forEach(x=>r[x.id]=x.subs.filter(v=>v!==P.name).length);P.sn={e,r,f:fol(P.name),mt:Date.now()};save()}
 function notifs(){const sn=P.sn||{e:{},r:{},f:0},o=[],n=P.n;
   D.eps.filter(e=>e.author===P.name).forEach(e=>{const b=sn.e[e.id]||[0,0],lk=e.likes.filter(x=>x!==P.name).length,cm=e.comments.filter(c=>c.a!==P.name).length;
     if(n.like&&lk>b[0])o.push(['❤️','『'+e.title+'』にいいね +'+(lk-b[0]),e.id]);if(n.comment&&cm>b[1])o.push(['💬','『'+e.title+'』に感想 +'+(cm-b[1]),e.id])});
   D.rooms.filter(r=>r.author===P.name).forEach(r=>{const c=r.subs.filter(x=>x!==P.name).length,b=sn.r[r.id]||0;if(n.sub&&c>b)o.push(['📂','Room『'+r.title+'』の購読 +'+(c-b),''])});
-  const f=fol(P.name);if(n.follow&&f>sn.f)o.push(['🙋','フォロワー +'+(f-sn.f),'']);return o}
+  D.eps.forEach(e=>e.comments.forEach(c=>{if(n.comment&&c.a!==P.name&&c.d>(sn.mt||0)&&c.t.includes('@'+P.name))o.push(['↩️',c.a+'さんから返信：'+c.t.slice(0,20),e.id])}));const f=fol(P.name);if(n.follow&&f>sn.f)o.push(['🙋','フォロワー +'+(f-sn.f),'']);return o}
 const openNotif=()=>{sheet={t:'🔔 通知',nt:notifs()};snap();render()};
 function sheetHTML(){return `<div class=sheet><div class=nb><button onclick="sheet=null;render()">‹ 閉じる</button><b>${sheet.t}</b></div>${sheet.h?sheet.h:sheet.cm?cmH():sheet.nt?list(sheet.nt,n=>`<div class=row onclick="sheet=null;${n[2]?`go('ep','${n[2]}')`:'render()'}"><span style="font-size:22px">${n[0]}</span><div class=grow>${esc(n[1])}</div></div>`,'新しいお知らせはありません'):list(sheet.u,u=>`<div class=row onclick="sheet=null;go('author','${q(u)}')">${av(u,36)}<b>${esc(u)}</b></div>`,'ユーザーがいません')}</div>`}
 
@@ -476,9 +496,82 @@ function evPost(tg,b){let p=0;if(evOn('sandai')&&tg.includes('三題噺'))p+=30;
 function evCm(){const a=evOn('comment');if(!a)return;P.evc=P.evc||{};if((P.evc[a[2]]||0)>=10)return;P.evc[a[2]]=(P.evc[a[2]]||0)+1;P.pt=(P.pt||0)+5}
 function weekly(){const n=Date.now(),f=d=>d.slice(5).replace('-','/');return `<h3>📅 毎週イベント（毎週月曜スタート）</h3><div class=card>${EVT.map(x=>{const[s,e]=evT(x),on=n>=s&&n<=e;return `<div class=row style="cursor:default;${on?'background:#a6f21a22':''}"><span style="font-size:24px">${x[0]}</span><div class=grow><b>${x[1]}</b> <span class=badge style="${n>e?'background:#888':on?'':'background:var(--c2)'}">${n<s?'あと'+Math.ceil((s-n)/864e5)+'日':on?'開催中':'終了'}</span><small>${f(x[2])}〜${f(x[3])}</small><small>${x[4]}</small></div></div>`}).join('')}</div>`}
 
+/* ---------- 新機能5つ（第2弾）---------- */
+// 1)閲覧者数 2)トロフィー 3)今週の注目作家 4)ミュート 5)配信履歴＆応援TOP
+function seen(id){const e=D.eps.find(x=>x.id===id);if(e&&e.author!==P.name&&!(e.rd=e.rd||[]).includes(P.name)){e.rd.push(P.name);e.u=Date.now();save()}}
+function mute(n){n=decodeURIComponent(n);const m=P.mu=P.mu||[],i=m.indexOf(n);i<0?m.push(n):m.splice(i,1);save();toast(i<0?n+' をミュートしました':'ミュートを解除しました');render()}
+const muteSec=()=>(P.mu||[]).length?sec('🔇 ミュート中',P.mu.map(n=>`<div class=row style="cursor:default"><div class=grow>${esc(n)}</div><button class="btn o" onclick="mute('${q(n)}')">解除</button></div>`).join('')):'';
+function troph(){const me=P.name,m=D.eps.filter(e=>e.author===me),rd=Object.values(P.rl||{}).reduce((a,v)=>a+v.length,0),cm=D.eps.reduce((a,e)=>a+e.comments.filter(c=>c.a===me).length,0),lh=P.lh||[],
+  T=[['🌱','初投稿',m.length,1],['📚','10作品を投稿',m.length,10],['❤️','50いいね獲得',m.reduce((a,e)=>a+e.likes.length,0),50],['✍️','5万字を書く',m.reduce((a,e)=>a+e.body.length,0),5e4],['📖','30作品を読む',rd,30],['💬','感想を20件',cm,20],['🖍','ハイライト10個',(P.hl||[]).length,10],['🎥','初配信',lh.length,1],['🎁','投げ銭500pt受取',P.gr||0,500],['👀','配信で最大10人',Math.max(0,...lh.map(x=>x.pk)),10],['⭐','1000pt貯める',P.pt||0,1e3],['🤝','リレー3回参加',D.eps.filter(e=>e.rl&&(e.parts||[]).some(p=>p.a===me)).length,3]];
+  return `<div class=empty>獲得 ${T.filter(t=>t[2]>=t[3]).length}/${T.length}</div>`+T.map(t=>{const ok=t[2]>=t[3];return `<div class=row style="cursor:default"><span style="font-size:22px;${ok?'':'filter:grayscale(1);opacity:.4'}">${t[0]}</span><div class=grow><b>${t[1]}</b><div style="height:5px;background:#8883;border-radius:3px;margin-top:4px"><div style="height:5px;width:${Math.min(100,t[2]/t[3]*100)}%;background:var(--c4);border-radius:3px"></div></div></div><small>${ok?'✅':Math.min(t[2],t[3])+'/'+t[3]}</small></div>`}).join('')}
+const histSec=()=>sec('🎥 配信履歴',list(P.lh||[],h=>`<div class=row style="cursor:default"><span>🎥</span><div class=grow><b>${esc(h.t)}</b><small>${ago(h.d)}・${mm(h.sec)}・最大👀${h.pk}・❤️${h.h}・🎁${h.g}pt</small>${h.sp&&h.sp.length?'<small>🏅 応援TOP：'+h.sp.map(x=>esc(x[0])+' '+x[1]+'pt').join('、')+'</small>':''}</div></div>`,'まだ配信していません'));
+const extra=()=>sec('🎨 表示設定',seg(['自動','ライト','ダーク'],P.dk||0,'setDk')+'<div class=empty>文字サイズ・書体・縦書きは作品画面で変えられます</div>')+sec('🏆 トロフィー',troph())+histSec()+muteSec();
+function mvp(){const w=Date.now()-6048e5,a={};D.eps.filter(e=>vis(e)&&e.date>w&&e.author!=='運営').forEach(e=>a[e.author]=(a[e.author]||0)+e.likes.length+e.comments.length*2);
+  return sec('🏅 今週の注目作家（7日間のいいね＋感想×2）',list(Object.entries(a).sort((x,y)=>y[1]-x[1]).slice(0,5),([n,v],i)=>`<div class=row onclick="go('author','${q(n)}')"><b>${i+1}</b>${av(n,36)}<div class=grow><b>${esc(n)}</b></div><small>${v}pt</small></div>`,'今週の投稿はまだありません'))}
+
+/* ---------- ランキング広告バー＆検索 ---------- */
+function rankBar(){const e=D.eps.filter(vis),t=byLikes(e),r=[...D.rooms].filter(x=>!(P.mu||[]).includes(x.author)).sort((a,b)=>b.subs.length-a.subs.length)[0],lk={};e.forEach(x=>lk[x.author]=(lk[x.author]||0)+x.likes.length);
+  const au=Object.entries(lk).filter(a=>a[0]!=='運営').sort((a,b)=>b[1]-a[1])[0],nw=[...e].sort((a,b)=>b.date-a.date)[0],sl=[];
+  if(t[0])sl.push(['🥇','作品 第1位 『'+t[0].title+'』',t[0].author+'・❤️ '+t[0].likes.length,'#ff7a18,#af002d',"go('ep','"+t[0].id+"')"]);
+  if(r)sl.push(['📂','Room 第1位 『'+r.title+'』',r.author+'・'+r.subs.length+'購読','#2f6bff,#00c6ff',"go('room','"+r.id+"')"]);
+  if(au)sl.push(['👑','TOPクリエイター '+au[0],'獲得いいね '+au[1],'#8a3ffc,#ff4fd8',"go('author','"+q(au[0])+"')"]);
+  if(nw)sl.push(['🆕','最新の作品 『'+nw.title+'』',nw.author+'・'+ago(nw.date),'#11998e,#38ef7d',"go('ep','"+nw.id+"')"]);
+  if(!sl.length)sl.push(['🏆','ランキングはまだありません','最初の作品を投稿して1位をめざそう','#f7971e,#ffd200','']);
+  const on=adI%sl.length;
+  return `<div class=adb>${sl.map((a,i)=>`<div class="sl ${i==on?'on':''}" style="background:linear-gradient(135deg,${a[3].split(',')[0]},${a[3].split(',')[1]});${a[4]?'cursor:pointer':''}" onclick="${a[4]}"><i class=s1></i><i class=s2></i><i class=s3></i><i class=s4></i><div class=tx><div style="font-size:34px">${a[0]}</div><b style="max-width:84vw;max-width:440px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a[1])}</b><small>${esc(a[2])}</small></div></div>`).join('')}<div class=dots>${sl.map((a,i)=>`<span class="${i==on?'on':''}"></span>`).join('')}</div></div>`}
+let SR={q:'',sc:0,so:0};
+const norm=s=>String(s??'').normalize('NFKC').toLowerCase().replace(/[ァ-ヶ]/g,c=>String.fromCharCode(c.charCodeAt(0)-96));
+function hl(t,tk){t=String(t);const n=norm(t);if(n.length!==t.length||!tk.length)return esc(t);const m=Array(t.length).fill(0);tk.forEach(k=>{let i=-1;while((i=n.indexOf(k,i+1))>=0)for(let j=i;j<i+k.length;j++)m[j]=1});let o='',a=0;for(let j=1;j<=t.length;j++)if(j==t.length||m[j]!==m[a]){const g=esc(t.slice(a,j));o+=m[a]?'<mark>'+g+'</mark>':g;a=j}return o}
+function srch(){const T=norm(SR.q).trim().split(/\s+/).filter(Boolean),ex=T.filter(t=>t[0]=='-'&&t.length>1).map(t=>t.slice(1)),tg=T.filter(t=>t[0]=='#'&&t.length>1).map(t=>t.slice(1)),tk=T.filter(t=>t[0]!='-'&&t[0]!='#'),f2=fl(),mu=P.mu||[];
+  if(!tk.length&&!tg.length)return{W:[],A:[],R:[],V:[],tk};
+  const W=D.eps.filter(vis).map(e=>{const lock=e.fol&&!f2.includes(e.author)&&e.author!==P.name,f=[[norm(e.title),5],[norm(e.tags.join(' ')),4],[norm(e.author),3],[norm((rm(e.room)||{}).title),2]];if(!lock)f.push([norm(e.desc),2],[norm(e.body),1]);
+    const all=f.map(x=>x[0]).join('\n');if(ex.some(k=>all.includes(k))||!tg.every(k=>e.tags.some(t=>norm(t).includes(k))))return null;let sc=0;for(const k of tk){let b=0;f.forEach(([x,w])=>{if(x.includes(k))b=Math.max(b,w)});if(!b)return null;sc+=b}return{e,sc,lock}}).filter(Boolean);
+  W.sort(SR.so==1?(a,b)=>b.e.date-a.e.date:SR.so==2?(a,b)=>b.e.likes.length-a.e.likes.length:(a,b)=>b.sc-a.sc||b.e.likes.length-a.e.likes.length);
+  const names=[...new Set([...D.eps.filter(vis).map(e=>e.author),...D.rooms.map(r=>r.author),...Object.keys(PR),P.name])].filter(n=>n&&n!=='運営'&&n!=='未設定'&&!mu.includes(n));
+  const A=tk.length?names.map(n=>({n,c:D.eps.filter(e=>e.author===n&&vis(e)).length,bio:n===P.name?P.bio:(PR[n]||{}).bio||''})).filter(a=>!ex.some(k=>norm(a.n).includes(k))&&tk.every(k=>norm(a.n+' '+a.bio).includes(k))).sort((a,b)=>(norm(b.n).includes(tk[0])?1:0)-(norm(a.n).includes(tk[0])?1:0)||fol(b.n)-fol(a.n)):[];
+  const R2=tk.length?D.rooms.filter(r=>!mu.includes(r.author)&&tk.every(k=>norm(r.title+' '+r.desc+' '+r.author).includes(k))&&!ex.some(k=>norm(r.title+' '+r.desc).includes(k))):[];
+  const V=tk.length?CL.filter(x=>tk.every(k=>norm(x.a+' '+x.t).includes(k))):[];return{W,A,R:R2,V,tk}}
+function snip(e,tk){const b=e.body,nb=norm(b);let i=-1;if(nb.length===b.length)tk.forEach(k=>{const j=nb.indexOf(k);if(j>=0&&(i<0||j<i))i=j});if(i<0)return '';const st=Math.max(0,i-18);return (st?'…':'')+hl(b.slice(st,st+70),tk)+'…'}
+const wRow=(x,tk)=>{const e=x.e,sn=x.lock?'🔒 フォロワー限定（本文は検索されません）':snip(e,tk);return `<div class=row onclick="srGo('ep','${e.id}')">${cov(e,48,64)}<div class=grow><b>${hl(e.title,tk)}</b>${e.fol?' 🔒':''}<small>${esc(e.author)}・${ago(e.date)}・❤️ ${e.likes.length}</small>${sn?`<small style="color:var(--fg);opacity:.8">${sn}</small>`:''}${e.tags.length?`<small>${e.tags.map(t=>'#'+hl(t,tk)).join(' ')}</small>`:''}</div></div>`};
+function srStart(){const tg={};D.eps.filter(vis).forEach(e=>e.tags.forEach(t=>tg[t]=(tg[t]||0)+1));const tags=Object.entries(tg).sort((a,b)=>b[1]-a[1]).slice(0,14),h=P.sh||[];
+  return (h.length?`<h3>🕘 検索履歴</h3><div style="padding:0 16px">${h.map(x=>`<span class=bd onclick="srQ('${q(x)}')" style="cursor:pointer">${esc(x)}</span>`).join('')}<span class=bd onclick="srClr()" style="cursor:pointer;color:var(--red)">消去</span></div>`:'')
+  +`<h3>🏷 人気のタグ</h3><div style="padding:0 16px">${tags.map(([t,c])=>`<span class=bd onclick="srTag('${q(t)}')" style="cursor:pointer">#${esc(t)} <small style="display:inline">${c}</small></span>`).join('')||'<small>タグはまだありません</small>'}</div>`
+  +sec('🔥 いま人気の作品',list(byLikes(D.eps.filter(vis)).slice(0,5),epRow,'作品がまだありません'))
+  +`<h3>💡 検索のコツ</h3><div class=card><div class=empty>スペース区切りでAND検索／<b>#タグ</b>でタグ検索／<b>-語</b>で除外。ひらがな・カタカナ・全角半角の違いは無視。タイトル・あらすじ・本文・作者・Room名を検索します。</div></div>`}
+function srRes(){if(!SR.q.trim())return srStart();const r=srch(),n=SR.sc==0?5:50,tk=r.tk,all=r.W.length+r.A.length+r.R.length+r.V.length,more=(l,i,t)=>l>n&&SR.sc==0?`<div class=row onclick="srSc(${i})" style="justify-content:center;color:var(--acd);font-weight:700">${t}をすべて見る（${l}）›</div>`:'';
+  let h=seg(['すべて '+all,'作品 '+r.W.length,'作者 '+r.A.length,'Room '+r.R.length],SR.sc,'srSc')+(SR.sc<2?seg(['関連順','新着順','人気順'],SR.so,'srSo'):'');
+  if(!all)return h+`<div class=empty style="text-align:center;padding:28px 16px">「${esc(SR.q.trim())}」に一致する結果がありません<br><small>別のキーワード、#タグ、-除外 を試してみてください</small></div>`+srStart().split('<h3>🔥')[0];
+  if(r.V.length&&SR.sc==0)h+=sec('🎥 配信中のライブ',r.V.map(x=>`<div class=row onclick="startLive('${q(x.a)}')"><span style="font-size:24px">🎥</span><div class=grow><b>${hl(x.a,tk)}</b><small>${esc(x.t||'')}・👀 ${x.v||0}</small></div></div>`).join(''));
+  if((SR.sc==0||SR.sc==1)&&r.W.length)h+=sec('📖 作品',r.W.slice(0,n).map(x=>wRow(x,tk)).join('')+more(r.W.length,1,'作品'));
+  if((SR.sc==0||SR.sc==2)&&r.A.length)h+=sec('👤 作者',r.A.slice(0,n).map(a=>`<div class=row onclick="srGo('author','${q(a.n)}')">${av(a.n,40)}<div class=grow><b>${hl(a.n,tk)}</b><small>作品 ${a.c}・フォロワー ${fol(a.n)}人</small></div></div>`).join('')+more(r.A.length,2,'作者'));
+  if((SR.sc==0||SR.sc==3)&&r.R.length)h+=sec('📂 Room',r.R.slice(0,n).map(x=>`<div class=row onclick="srGo('room','${x.id}')">${cov(x,48,64)}<div class=grow><b>${hl(x.title,tk)}</b><small>${esc(x.author)}・${x.subs.length}購読</small></div></div>`).join('')+more(r.R.length,3,'Room'));
+  return h}
+const search=()=>`<div class=pad style="padding-bottom:4px;position:sticky;top:0;z-index:4;background:var(--bg)"><h1 class=lt style="margin:0 0 8px">検索</h1><input id=sqi type=search placeholder="タイトル・本文・作者・#タグ・Room" value="${esc(SR.q)}" oninput="SR.q=this.value;$('#sr').innerHTML=srRes()" onkeydown="if(event.key=='Enter'){shist();this.blur()}"></div><div id=sr style="padding-bottom:20px">${srRes()}</div>`;
+const srSc=i=>{SR.sc=i;render()},srSo=i=>{SR.so=i;render()},srQ=x=>{SR.q=decodeURIComponent(x);shist();render()},srClr=()=>{P.sh=[];save();render()};
+function shist(){const v=SR.q.trim();if(!v||!Object.values(srch()).slice(0,4).some(a=>a.length))return;P.sh=[v,...(P.sh||[]).filter(x=>x!==v)].slice(0,10);save()}
+function srGo(t,id){shist();go(t,id)}
+function srTag(t){SR.q='#'+decodeURIComponent(t);SR.sc=0;stack=[];tab=1;render(1)}
+
+/* ---------- 新機能5つ（第3弾）---------- */
+// 1)下書き箱 2)あとで読む/読了 3)返信＆メンション 4)テーマ切替 5)次に読む
+function dSave(){const f=Fm.n;if(!f.title&&!f.body)return toast('タイトルか本文を入力してください');P.dr=P.dr||[];const id=f.did||uid(),i=P.dr.findIndex(x=>x.id===id),d={id,title:f.title,desc:f.desc,tags:f.tags,room:f.room,body:f.body,d:Date.now()};i<0?P.dr.unshift(d):P.dr[i]=d;f.did=id;P.dr=P.dr.slice(0,30);try{localStorage.setItem('nn_draft',JSON.stringify(f))}catch(e){}save();toast('💾 下書き箱に保存しました（'+P.dr.length+'件）')}
+const dHtml=()=>`<div class=card>${(P.dr||[]).length?P.dr.map((d,i)=>`<div class=row style="cursor:default"><div class=grow onclick="dLoad('${d.id}')" style="cursor:pointer"><b>${esc(d.title||'（無題）')}</b><small>${ago(d.d)}・${d.body.length}字・タップで続きを書く</small><small>${esc(d.body.slice(0,40))}</small></div><button class=del onclick="dDel(${i})">🗑</button></div>`).join(''):'<div class=empty>下書きはありません。投稿画面の「💾 下書き保存」で保存できます</div>'}</div>`;
+const dOpen=()=>{sheet={t:'📂 下書き箱',h:dHtml()};render()},dDel=i=>{if(!confirm('この下書きを削除しますか？'))return;P.dr.splice(i,1);save();dOpen()};
+function dLoad(id){const d=P.dr.find(x=>x.id===id);if(!d)return;Object.assign(Fm.n,{title:d.title,desc:d.desc,tags:d.tags,room:d.room,body:d.body,did:d.id});try{localStorage.setItem('nn_draft',JSON.stringify(Fm.n))}catch(e){}sheet=null;stack=[];mode=0;tab=TABS.findIndex(x=>x[1]==='投稿');render(1);toast('下書きを読み込みました')}
+function later(id){const a=P.lt=P.lt||[],i=a.indexOf(id);i<0?a.push(id):a.splice(i,1);save();toast(i<0?'📌 あとで読むに追加しました':'あとで読むから外しました');render()}
+function done(id){const d=P.dn=P.dn||{};if(d[id]){delete d[id];toast('読了を取り消しました')}else{d[id]=Date.now();P.lt=(P.lt||[]).filter(x=>x!==id);P.dp=P.dp||{};if(!P.dp[id]){P.dp[id]=1;P.pt=(P.pt||0)+3;toast('✅ 読了！ +3pt');boom()}else toast('✅ 読了にしました')}save();render()}
+const lib2=()=>sec('📌 あとで読む（'+(P.lt||[]).length+'）',list(D.eps.filter(e=>(P.lt||[]).includes(e.id)&&vis(e)),epRow,'作品画面の「📍 あとで読む」で追加できます'))+sec('✅ 読了済み',list(D.eps.filter(e=>(P.dn||{})[e.id]&&vis(e)).sort((a,b)=>P.dn[b.id]-P.dn[a.id]),epRow,'読了した作品がここに並びます'));
+const mention=t=>esc(t).replace(/@([^\s　]+)/g,'<b style="color:var(--acd)">@$1</b>');
+function reply(n){const i=$('#ci');if(!i)return;i.value='@'+decodeURIComponent(n)+' ';i.dispatchEvent(new Event('input'));i.focus();i.scrollIntoView({block:'center'})}
+function applyDk(){const r=document.documentElement;if(P.dk)r.dataset.th=P.dk==1?'light':'dark';else delete r.dataset.th}
+const setDk=i=>{P.dk=i;save();applyDk();render()};
+function simil(e){const dn=P.dn||{},ok=x=>x.id!==e.id&&vis(x)&&!dn[x.id]&&(!x.fol||fl().includes(x.author)||x.author===P.name),tg=new Set(e.tags),
+  c=D.eps.filter(ok).map(x=>({x,s:x.tags.filter(t=>tg.has(t)&&t!=='リレー小説').length*3+(e.room&&x.room===e.room?5:0)+(x.author===e.author?2:0)})).filter(a=>a.s>0).sort((a,b)=>b.s-a.s||b.x.likes.length-a.x.likes.length).slice(0,8).map(a=>a.x),
+  r=c.length?c:byLikes(D.eps.filter(ok)).slice(0,5);return r.length?`<div style="margin:0 -16px">${cds(c.length?'📚 次に読む（似た作品）':'📚 次に読む（人気作品）',r)}</div>`:''}
+
 /* ---------- navigation ---------- */
-const TABS=[['🏠','ホーム',home],['🏆','ランキング',ranking],['✏️','投稿',post],['📚','本棚',library],['🙂','プロフ',profile]];
-const V={ep:id=>{if(P.last!==id){P.last=id;save()}mis('read');rlog(id);return reader(id)},room:roomDetail,author,edit:()=>ed('e')};
+const TABS=[['🏠','ホーム',home],['🔍','検索',search],['🏆','ランキング',ranking],['✏️','投稿',post],['📚','本棚',library],['🙂','プロフ',profile]];
+const V={ep:id=>{if(P.last!==id){P.last=id;save()}mis('read');rlog(id);seen(id);return reader(id)},room:roomDetail,author,edit:()=>ed('e')};
 function go(t,a){stack.push({t,a:decodeURIComponent(a)});render(1)}
 const back=()=>{stack.pop();render(1)};
 const setTab=i=>{tab=i;stack=[];render(1)};
@@ -486,11 +579,11 @@ function render(top){if(top&&window.speechSynthesis)speechSynthesis.cancel();
   const y=scrollY,t=stack[stack.length-1];let h;
   if(t){const T={ep:'',room:'Room詳細',author:t.a,edit:'作品を編集'}[t.t];h=`<div class=nb><button onclick="back()">‹ 戻る</button><b>${esc(T)}</b></div>`+V[t.t](t.a)}
   else h=TABS[tab][2]();
-  $('#app').innerHTML=`<main>${h}</main><nav>${TABS.map((x,i)=>`<button class="${i==tab&&!stack.length?'on':''}" onclick="setTab(${i})"><span>${x[0]}${i==4&&notifs().length?'<u class=nd></u>':''}</span>${x[1]}</button>`).join('')}</nav>${lv?'<div id=live class=live></div>':''}${sheet?sheetHTML():''}`;
+  $('#app').innerHTML=`<main>${h}</main>${lv?'':`<nav>${TABS.map((x,i)=>`<button class="${i==tab&&!stack.length?'on':''}" onclick="setTab(${i})"><span>${x[0]}${i==TABS.length-1&&notifs().length?'<u class=nd></u>':''}</span>${x[1]}</button>`).join('')}</nav>`}${lv?'<div id=live class=live></div>':''}${sheet?sheetHTML():''}`;
   if(lv)renderLive();
-  scrollTo(0,top?0:y);if(top&&t&&t.t==='ep')resume(t.a);
+  scrollTo(0,top?0:y);if(top&&t&&t.t==='ep')resume(t.a);if(top&&!t&&tab==1&&!SR.q){const i=$('#sqi');if(i)i.focus()}
 }
-if(!P.sn)snap();applyTheme();render();cloudPull().then(cloudPush);setInterval(cloudPull,30000);
+if(!P.sn)snap();applyTheme();applyDk();render();cloudPull().then(cloudPush);setInterval(cloudPull,30000);
 </script>
 </body>
 </html>
