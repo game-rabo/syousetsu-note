@@ -139,7 +139,7 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 const SB='https://mzykelberuojpgyieiqv.supabase.co',KEY='sb_publishable_DgxzZQeKj0tz4EELPlNFeg_TH1CcuQD';
 let cloud='未接続',PR={};const hs={},TB=[['nn_episodes','eps'],['nn_rooms','rooms']];
 async function api(p,o={}){const r=await fetch(SB+'/rest/v1/'+p,{...o,headers:{apikey:KEY,'Content-Type':'application/json',...(o.headers||{})}});const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null}
-const BUILD='2026-11-17-d';
+const BUILD='2026-11-17-e';
 /* 接続診断：各テーブル／関数に実際にアクセスして結果を一覧表示 */
 async function cloudDiag(){
   const T=['nn_episodes','nn_rooms','nn_profiles','nn_reports','nn_bans','nn_appeals','nn_modlog'];
@@ -154,17 +154,25 @@ async function cloudDiag(){
       else{bad++;st='❌ '+r.status+' '+c+' '+String((j&&j.message)||x).slice(0,70)}}
     catch(e){bad++;st='❌ 通信できません'}
     rows+='<div style="padding:5px 0;border-bottom:1px solid #333"><b>'+t+'</b><br><small>'+esc(st)+'</small></div>'}
+  let seen='?';
+  try{const r=await fetch(SB+'/rest/v1/nn_seen?select=name&limit=1',{headers:{apikey:KEY}}),x=await r.text();let j=null;try{j=JSON.parse(x)}catch(_){}
+    seen=((j&&j.code)==='PGRST205')?'stale':'fresh'}catch(e){seen='?'}
+  rows+='<div style="padding:5px 0;border-bottom:1px solid #333"><b>判定用 nn_seen</b><br><small>'+(seen==='stale'?'❌ APIが新しいテーブルを認識していません':seen==='fresh'?'✅ APIは新しいテーブルを認識しています':'？ 判定できませんでした')+'</small></div>';
   let fn;
   try{const r=await fetch(SB+'/rest/v1/rpc/adm_ok',{method:'POST',headers:{apikey:KEY,'Content-Type':'application/json'},body:JSON.stringify({p_pin:''})});
     if(r.ok)fn='✅ 運営用関数 OK';else{bad++;fn='❌ 運営用関数 '+r.status+'（SQLの関数部分が未作成）'}}
   catch(e){bad++;fn='❌ 通信できません'}
   rows+='<div style="padding:5px 0"><b>rpc/adm_ok</b><br><small>'+esc(fn)+'</small></div>';
-  const msg=bad?'<p style="color:var(--red)"><b>❌ が'+bad+'件あります。</b>テーブルが見つからない場合：①SQL Editorで supabase_reload.sql を実行 ②1分待って再診断 ③それでもダメなら Supabase の Project Settings → General → Restart project</p>':'<p><b>✅ すべて正常です。</b>「今すぐ同期」を押してください。</p>';
+  const R='<p style="color:var(--red)">';let msg;
+  if(!bad)msg='<p><b>✅ すべて正常です。</b>「閉じる」→「今すぐ同期」を押してください。</p>';
+  else if(seen==='stale')msg=R+'<b>原因：SupabaseのAPIが、新しく作ったテーブルを認識していません（記憶が古いまま）。</b></p><p>① Supabase → Project Settings → General → <b>Restart project</b><br>② 2分ほど待つ<br>③ このアプリで、もう一度「接続診断」</p>';
+  else if(seen==='fresh')msg=R+'<b>原因：❌の付いたテーブルだけが壊れています。</b></p><p>SQL Editor で <b>supabase_rebuild.sql</b> を実行 → 1分待って、もう一度「接続診断」</p>';
+  else msg=R+'<b>❌が'+bad+'件あります。</b>通信状態を確認して、もう一度お試しください。</p>';
   sheet={t:'🔍 接続診断',h:'<div class=pad>'+head+msg+'<div class=card style="padding:6px 12px">'+rows+'</div></div>'};render()}
 /* 同期エラーの原因を判別して表示（原因が分からない問題の再発防止） */
 function cerr(e){let m=String(e&&e.message||e),j=null;try{j=JSON.parse(m)}catch(_){}
   const c=(j&&j.code)||'',d=String((j&&(j.message||j.hint))||m);console.error('[cloud]',e);let r;
-  if(c==='PGRST205'||c==='42P01'||/schema cache|does not exist|Could not find the table/i.test(d)){const tb=(d.match(/'(?:public\.)?(nn_[a-z_]+)'/)||[])[1]||'';r='接続先['+SB.slice(8,16)+'…]に'+(tb?'テーブル '+tb+' が':'テーブルが')+'ありません。このプロジェクトのSQL Editorで supabase_setup.sql を実行してください（'+(c||'404')+'）'}
+  if(c==='PGRST205'||c==='42P01'||/schema cache|does not exist|Could not find the table/i.test(d)){const tb=(d.match(/'(?:public\.)?(nn_[a-z_]+)'/)||[])[1]||'';r='接続先['+SB.slice(8,16)+'…]に'+(tb?'テーブル '+tb+' が':'テーブルが')+'ありません。。「🔍 接続診断」を押して案内に従ってください（'+(c||'404')+'）'}
   else if(c==='42501'||/row-level security|permission denied/i.test(d))r='権限(RLS)が不足しています。supabase_setup.sql を再実行してください（'+(c||'403')+'）';
   else if(/Invalid API key|JWT|apikey/i.test(d))r='APIキーが無効です。Supabaseの Publishable key を確認してください';
   else if(e instanceof TypeError||/Failed to fetch|NetworkError|Load failed/i.test(m))r='Supabaseに接続できません（通信不良、またはプロジェクトが一時停止中の可能性）';
