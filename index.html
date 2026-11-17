@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>小説note</title>
+<style>
+:root{--bg:#f2f2f7;--card:#fff;--fg:#111;--sub:#6b6b73;--line:#e3e3e8;--ac:#a6f21a;--acd:#3f7d00;--red:#e5372f}
+@media(prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--fg:#f5f5f7;--sub:#9a9aa2;--line:#2c2c2e;--acd:#a6f21a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.6 -apple-system,"Hiragino Sans","Yu Gothic",system-ui,sans-serif}
+#app{max-width:520px;margin:0 auto;min-height:100vh;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+.pad{padding:14px 16px}
+h1.lt{font-size:30px;margin:14px 16px 4px}
+h3{font-size:15px;margin:20px 16px 8px;color:var(--sub);font-weight:600}
+.card{background:var(--card);border-radius:12px;margin:0 16px;overflow:hidden}
+.row{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);cursor:pointer}
+.row:last-child{border-bottom:0}
+.grow{flex:1;min-width:0}
+small{color:var(--sub);font-size:12px;display:block}
+.empty{padding:12px 16px;color:var(--sub);font-size:13px}
+.in,input,select,textarea{width:100%;font:inherit;color:var(--fg);background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin:0}
+.card input,.card select,.card textarea{border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent}
+textarea{min-height:200px;resize:vertical}
+input[type=checkbox]{width:22px;height:22px;flex:none}
+label.tg{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line)}
+.logo{font-size:42px;font-weight:900;color:var(--ac);text-shadow:0 1px 0 rgba(0,0,0,.18);margin:14px 0 4px}
+.ad{height:170px;border-radius:20px;background:linear-gradient(135deg,#2f6bff,#8a3ffc);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:14px 0;text-align:center}
+.ad b{font-size:20px}.ad small{color:#ffffffcc}
+.btn{display:inline-block;background:var(--ac);color:var(--bt,#111);border:0;border-radius:10px;padding:10px 18px;font:inherit;font-weight:700;cursor:pointer}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn.o{background:transparent;color:var(--acd);border:1.5px solid var(--acd)}
+.btn.w{display:block;width:calc(100% - 32px);margin:16px}
+.av{display:inline-flex;align-items:center;justify-content:center;border-radius:50%;background:#8883;color:var(--sub);object-fit:cover;flex:none;overflow:hidden}
+.strip{display:flex;gap:16px;overflow-x:auto;padding:4px 16px 8px}
+.strip>div{text-align:center;cursor:pointer;flex:none;font-size:12px;font-weight:700}
+.ring{width:68px;height:68px;border:3px solid var(--red);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:24px;margin:0 auto 2px}
+.badge{background:var(--red);color:#fff;font-size:9px;font-weight:700;border-radius:4px;padding:1px 5px;display:inline-block}
+.seg{display:flex;background:#8882;border-radius:10px;padding:2px;margin:12px 16px}
+.seg button{flex:1;border:0;background:transparent;color:var(--fg);padding:7px;border-radius:8px;font:inherit;font-size:14px;cursor:pointer}
+.seg button.on{background:var(--card);font-weight:700;box-shadow:0 1px 3px #0003}
+nav{position:fixed;bottom:0;left:0;right:0;max-width:520px;margin:0 auto;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;border:0;background:transparent;color:var(--sub);padding:8px 0 6px;font:inherit;font-size:10px;cursor:pointer}
+nav button span{display:block;font-size:20px;line-height:1.2}
+nav button.on{color:var(--acd);font-weight:700}
+.nb{display:flex;align-items:center;gap:8px;padding:10px 12px;position:sticky;top:0;background:var(--bg);z-index:4}
+.nb button{border:0;background:none;color:var(--acd);font:inherit;font-weight:700;cursor:pointer}
+.lock{text-align:center;padding:60px 16px}
+.cm{background:#8881;border-radius:8px;padding:8px 12px;margin:8px 0}
+.body{white-space:pre-wrap;line-height:2}
+.acts{display:flex;gap:28px;margin:16px 0}
+.acts button{border:0;background:none;font:inherit;font-size:18px;cursor:pointer;color:var(--sub)}
+.live{position:fixed;inset:0;background:var(--bg);z-index:20;overflow:auto;max-width:520px;margin:0 auto}
+.stage{background:#000;color:#fff;height:300px;display:flex;flex-direction:column;justify-content:space-between;padding:14px;align-items:center}
+.stage .top{display:flex;gap:8px;align-items:center;width:100%}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--red)}
+.rec{border:0;background:none;color:#fff;font:inherit;cursor:pointer;font-size:13px;font-weight:700}
+.rec i{display:block;font-style:normal;font-size:56px;line-height:1.1}
+.sheet{position:fixed;inset:0;background:var(--bg);z-index:15;overflow:auto;max-width:520px;margin:0 auto}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#222;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;z-index:30;opacity:0;transition:opacity .2s;pointer-events:none}
+#toast.on{opacity:1}
+.del{border:0;background:none;font-size:18px;cursor:pointer}
+.tb{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0}.tb button{border:1px solid var(--line);background:var(--card);color:var(--fg);border-radius:8px;padding:4px 10px;font:inherit;font-size:13px;cursor:pointer}
+.body.sepia{background:#f4ecd8;color:#3b3022;padding:12px;border-radius:10px}.body.dk{background:#111;color:#ddd;padding:12px;border-radius:10px}
+.body.vert{writing-mode:vertical-rl;height:70vh;overflow-x:auto;overflow-y:hidden}
+.bd{display:inline-block;background:#8882;border-radius:20px;padding:4px 12px;margin:3px;font-size:13px}
+.cds{display:flex;gap:12px;overflow-x:auto;padding:0 16px 8px}.cd{flex:none;width:110px;cursor:pointer}.cd b{display:block;font-size:13px;line-height:1.3;max-height:2.6em;overflow:hidden;margin-top:4px}
+h3::before{content:'◆';color:var(--ac);font-size:11px;margin-right:6px}
+.adb{position:relative;height:170px;border-radius:20px;overflow:hidden;margin:14px 0;color:#fff}
+.adb .sl{position:absolute;inset:0;opacity:0;transition:opacity .6s;display:flex;align-items:center;justify-content:center;text-align:center}.adb .sl.on{opacity:1}
+.adb .tx{position:relative;z-index:1;padding:0 16px}.adb .tx b{font-size:20px;display:block}.adb .tx small{color:#ffffffdd}
+.adb i,.deco i{position:absolute;animation:fl 6s ease-in-out infinite}.adb i{opacity:.28;background:#fff}
+.s1{width:90px;height:90px;border-radius:50%;left:-20px;top:-20px}
+.adb .s2{width:0;height:0;background:none;border-left:35px solid transparent;border-right:35px solid transparent;border-bottom:60px solid #fff;right:20px;top:14px;animation-delay:-2s}
+.adb .s3{width:60px;height:60px;border:8px solid #fff;background:none;border-radius:50%;right:-14px;bottom:-14px;animation-delay:-4s}
+.s4{width:40px;height:40px;left:30px;bottom:18px;transform:rotate(45deg);animation-delay:-1s}
+.dots{position:absolute;bottom:8px;left:0;right:0;display:flex;justify-content:center;gap:6px;z-index:2}.dots span{width:7px;height:7px;border-radius:50%;background:#fff6;transition:width .3s}.dots span.on{background:#fff;width:18px;border-radius:4px}
+@keyframes fl{50%{transform:translateY(-12px) rotate(18deg)}}
+.deco{position:fixed;inset:0;overflow:hidden;pointer-events:none;z-index:0}.deco i{opacity:.13;animation-duration:9s}
+#app{position:relative;z-index:1}
+.btn:not(:disabled){animation:pls 2.6s ease-in-out infinite}.btn:active{transform:scale(.95)}
+@keyframes pls{0%,100%{box-shadow:0 0 0 0 #a6f21a00}50%{box-shadow:0 0 0 7px #a6f21a55}}
+nav button.on span{animation:bob 1.8s ease-in-out infinite}@keyframes bob{50%{transform:translateY(-3px)}}
+.ring{animation:rg 2s ease-in-out infinite}@keyframes rg{50%{transform:scale(1.08)}}
+:root{--c1:#ff4fa3;--c2:#2f6bff;--c3:#ffb300;--c4:#11c27a;--c5:#8a3ffc}
+body{background:radial-gradient(circle at 8% 0,#ff4fa326,transparent 40%),radial-gradient(circle at 100% 18%,#2f6bff26,transparent 40%),radial-gradient(circle at 0 78%,#ffb30026,transparent 40%),var(--bg)}
+.logo{background:linear-gradient(90deg,#a6f21a,#2fd4ff,#ff4fa3,#ffb300,#a6f21a);background-size:300% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;text-shadow:none;animation:shim 6s linear infinite}
+@keyframes shim{to{background-position:300% 0}}
+.hero{position:relative}.hero i{position:absolute;font-style:normal;animation:fl 4s ease-in-out infinite}
+h3:nth-of-type(5n+1)::before{color:var(--c1)}h3:nth-of-type(5n+2)::before{color:var(--c2)}h3:nth-of-type(5n+3)::before{color:var(--c3)}h3:nth-of-type(5n+4)::before{color:var(--c4)}h3:nth-of-type(5n)::before{color:var(--c5)}
+h3::before{display:inline-block;animation:spin 6s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.btn{background:linear-gradient(135deg,var(--ac),var(--ac2,#38ef7d))}.btn.o{background:transparent}
+.seg button.on{background:linear-gradient(135deg,#ffd200,#ff7a18);color:#111;animation:pls2 2s ease-in-out infinite}
+@keyframes pls2{50%{box-shadow:0 0 12px #ff7a1899}}
+.cd{transition:transform .2s}.cd:hover{transform:translateY(-4px) rotate(-1deg)}
+.cds .cd:nth-child(odd),.strip>div{animation:fl2 4s ease-in-out infinite}.cds .cd:nth-child(even),.strip>div:nth-child(2n){animation:fl2 5s ease-in-out infinite reverse}
+@keyframes fl2{50%{transform:translateY(-4px)}}
+.row{transition:transform .15s,background .15s}.row:hover{background:#a6f21a1c;transform:translateX(3px)}
+nav button span{animation:bob 3s ease-in-out infinite}nav button:nth-child(2n) span{animation-delay:-1s}
+nav button:nth-child(1).on{color:var(--c1)}nav button:nth-child(2).on{color:var(--c2)}nav button:nth-child(3).on{color:var(--c4)}nav button:nth-child(4).on{color:var(--c3)}nav button:nth-child(5).on{color:var(--c5)}
+input:focus,textarea:focus,select:focus{outline:2px solid var(--c2);box-shadow:0 0 0 4px #2f6bff33}
+.card{box-shadow:0 8px 20px #8a3ffc14;border:1px solid #8a3ffc18}
+#cf{position:fixed;inset:0;pointer-events:none;z-index:40;overflow:hidden}#cf i{position:absolute;top:-20px;width:9px;height:14px;animation:cfl 2s ease-in forwards}@keyframes cfl{to{transform:translateY(105vh) rotate(720deg)}}
+.hf{position:absolute;bottom:0;font-size:24px;font-style:normal;animation:hfl 1.8s ease-out forwards}@keyframes hfl{to{transform:translateY(-220px) scale(1.5);opacity:0}}
+.lvt{display:flex;gap:6px;flex-wrap:wrap;padding:8px 14px}.lvt div{flex:1;min-width:70px;background:var(--card);border-radius:12px;padding:6px;text-align:center;font-size:12px}.lvt b{display:block;font-size:18px}
+.vstage{position:relative;height:56vh;background:linear-gradient(160deg,#1b0a3c,#3a0ca3,#f72585);color:#fff;overflow:hidden;display:flex;flex-direction:column}
+.vchat{position:absolute;left:0;right:66px;bottom:0;max-height:45%;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end;padding:8px 12px;gap:4px;font-size:14px}.vchat div{background:#0007;border-radius:12px;padding:3px 10px;width:fit-content;max-width:100%}
+.vside{position:absolute;right:8px;bottom:10px;display:flex;flex-direction:column;gap:8px;z-index:3}.vside button{width:48px;height:48px;border-radius:50%;border:0;font-size:22px;background:#fff3;cursor:pointer;animation:fl2 2s ease-in-out infinite}
+.scr{height:130px;overflow:auto;scroll-behavior:smooth;background:var(--card);border-radius:12px;margin:0 14px;padding:10px;white-space:pre-wrap;font-size:15px;line-height:1.9}
+.lcm{padding:4px 0;border-bottom:1px solid var(--line);font-size:14px}
+.hm{display:grid;grid-template-rows:repeat(7,14px);grid-auto-flow:column;grid-auto-columns:14px;gap:3px;padding:12px 14px;overflow-x:auto}.hm i{display:block;border-radius:3px}
+nav button span{position:relative;display:block}.nd{position:absolute;top:0;right:-5px;width:9px;height:9px;background:var(--red);border-radius:50%;animation:pls 1.4s infinite}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+mark{background:#ffe066;color:#111;border-radius:3px;padding:0 1px}#pgb{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--c1),var(--c2),var(--c4));z-index:50;transition:width .15s}
+</style>
+</head>
+<body>
+<div class="deco"><i style="left:6%;top:12%;width:70px;height:70px;border-radius:50%;background:var(--ac)"></i><i style="right:8%;top:30%;width:60px;height:60px;border:9px solid #2f6bff;border-radius:50%"></i><i style="left:12%;top:62%;width:70px;height:70px;background:#ff4fd8;clip-path:polygon(50% 0,100% 100%,0 100%)"></i><i style="right:10%;top:72%;width:64px;height:64px;background:#ffb300;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)"></i><i style="left:44%;top:88%;width:40px;height:40px;background:#8a3ffc;transform:rotate(45deg)"></i></div>
+<div id="app"></div>
+<div id="toast"></div>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const q=s=>encodeURIComponent(s).replace(/'/g,'%27');
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const L=(k,d)=>{try{return JSON.parse(localStorage.getItem(k))||d}catch(e){return d}};
+const LIVES=[];
+
+function seed(){return{eps:[],rooms:[]}}
+let D=L('nn_db',null)||seed();D.eps=D.eps.filter(x=>!x.s);D.rooms=D.rooms.filter(x=>!x.s);
+let P=L('nn_pf',null)||{name:'未設定',bio:'よろしくお願いします',following:'',followers:0,img:'',n:{like:1,comment:1,follow:1,book:1,sub:1}};
+P.r=P.r||{fs:17,th:0,vert:0};
+const save=()=>{try{localStorage.setItem('nn_db',JSON.stringify(D));localStorage.setItem('nn_pf',JSON.stringify(P))}catch(e){toast('保存できませんでした（容量不足）')}clearTimeout(save._t);save._t=setTimeout(()=>cloudPush(),1500)};
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2200)}
+
+/* ---------- Supabase cloud sync ---------- */
+const SB='https://mzykelberuojpgyieiqv.supabase.co',KEY='sb_publishable_DgxzZQeKj0tz4EELPlNFeg_TH1CcuQD';
+let cloud='未接続',PR={};const hs={},TB=[['nn_episodes','eps'],['nn_rooms','rooms']];
+async function api(p,o={}){const r=await fetch(SB+'/rest/v1/'+p,{...o,headers:{apikey:KEY,'Content-Type':'application/json',...(o.headers||{})}});const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null}
+const skip=x=>x.s||LIVES.includes(x.author);
+async function cloudPush(){
+  try{for(const[t,k]of TB){const rows=[],done=[];
+    for(const x of D[k]){if(skip(x))continue;const{u,...c}=x,j=JSON.stringify(c);if(hs[x.id]===j)continue;x.u=Date.now();rows.push({id:x.id,author:x.author,data:x,updated_at:new Date().toISOString()});done.push([x.id,j])}
+    if(rows.length){await api(t+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows)});done.forEach(([i,j])=>hs[i]=j)}}
+   if(P.name&&P.name!=='未設定'){const d={bio:P.bio,following:fl()},j=JSON.stringify(d);if(hs.pf!==j){await api('nn_profiles?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{id:P.name,data:d,updated_at:new Date().toISOString()}])});hs.pf=j}}
+   cloud='同期済み '+new Date().toLocaleTimeString()}catch(e){cloud='エラー（supabase_reset.sql を実行しましたか？）'}}
+function mergeIn(l,r){const o=(r.u||0)>(l.u||0)?{...l,...r}:{...r,...l};
+  for(const k of['likes','marks','subs'])if(l[k]||r[k])o[k]=[...(r[k]||[]).filter(v=>v!==P.name),...(l[k]||[]).filter(v=>v===P.name)];
+  if(l.comments||r.comments){const m=new Map();[...(l.comments||[]),...(r.comments||[])].forEach(c=>m.set(c.a+c.d,c));o.comments=[...m.values()]}if(l.parts||r.parts){const m=new Map();[...(l.parts||[]),...(r.parts||[])].forEach(c=>m.set(c.a+c.d,c));o.parts=[...m.values()].sort((a,b)=>a.d-b.d);o.body=o.parts.map(x=>x.t).join('\n\n')}if(l.rx||r.rx){o.rx={};for(const x of new Set([...Object.keys(l.rx||{}),...Object.keys(r.rx||{})]))o.rx[x]=[...((r.rx||{})[x]||[]).filter(v=>v!==P.name),...((l.rx||{})[x]||[]).filter(v=>v===P.name)]}return o}
+async function cloudPull(){
+  try{let ch=0;for(const[t,k]of TB){const rows=await api(t+'?select=data&order=updated_at.desc&limit=500');
+    for(const{data:r}of rows){const i=D[k].findIndex(x=>x.id===r.id);
+      if(i<0){D[k].push(r);ch++;const{u,...c}=r;hs[r.id]=JSON.stringify(c)}
+      else if(!skip(D[k][i])){const m=mergeIn(D[k][i],r);if(JSON.stringify(m)!==JSON.stringify(D[k][i])){D[k][i]=m;ch++}}}}
+   (await api('nn_profiles?select=id,data&limit=1000')).forEach(x=>PR[x.id]=x.data);
+   cloud='同期済み '+new Date().toLocaleTimeString();
+   if(ch){save();if(!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))render()}}catch(e){cloud='エラー（supabase_reset.sql を実行しましたか？）'}}
+const cdel=(t,id)=>api(t+'?id=eq.'+encodeURIComponent(id),{method:'DELETE'}).catch(()=>{});
+async function cloudWipe(){if(!confirm('クラウド上の「'+P.name+'」の作品とRoomをすべて削除します。よろしいですか？'))return;
+  try{for(const[t]of TB)await api(t+'?author=eq.'+encodeURIComponent(P.name),{method:'DELETE'});await api('nn_profiles?id=eq.'+encodeURIComponent(P.name),{method:'DELETE'});toast('クラウドの自分のデータを削除しました')}catch(e){toast('削除できませんでした')}}
+
+let tab=0,stack=[],mode=0,Q='',sheet=null,lv=null;
+const newEp=()=>({title:'',desc:'',tags:'',room:'',body:'',pub:true,fol:false,img:'',at:0});
+const Fm={n:newEp(),e:{},r:{title:'',desc:'',img:''},l:{title:''},rl:{title:'',desc:'',text:''}};
+let cur='n';Object.assign(Fm.n,L('nn_draft',{}));
+const fl=()=>P.following.split(',').filter(Boolean);
+const vis=e=>(e.pub&&(!e.at||e.at<=Date.now()))||e.author===P.name;
+const rm=id=>D.rooms.find(r=>r.id===id);
+const byLikes=a=>[...a].sort((x,y)=>y.likes.length-x.likes.length);
+
+function readImg(file,max,cb){
+  if(!file)return;const fr=new FileReader();
+  fr.onload=()=>{const im=new Image();im.onload=()=>{const s=Math.min(1,max/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*s;c.height=im.height*s;c.getContext('2d').drawImage(im,0,0,c.width,c.height);cb(c.toDataURL('image/jpeg',.8))};im.src=fr.result};
+  fr.readAsDataURL(file);
+}
+function av(n,s=60,r='50%'){
+  const st=`width:${s}px;height:${s}px;border-radius:${r};font-size:${s/2.5}px${n===P.name&&P.fr?';box-shadow:'+((SH.find(x=>x[0]===P.fr)||[])[3]||'none'):''}`;
+  return n===P.name&&P.img?`<img class=av style="${st}" src="${P.img}">`:`<span class=av style="${st}">${esc(String(n).slice(0,1))}</span>`;
+}
+const epRow=e=>`<div class=row onclick="go('ep','${e.id}')">${cov(e,48,64)}<div class=grow><b>${esc(e.title)}</b><small>${esc(e.author)}・${ago(e.date)}</small></div>${e.fol?'🔒':''}<small>❤️ ${e.likes.length}</small></div>`;
+const rmRow=r=>`<div class=row onclick="go('room','${r.id}')">${cov(r,48,64)}<div class=grow><b>${esc(r.title)}</b><small>${esc(r.author)}・${ago(r.date)}・${r.subs.length}購読</small></div></div>`;
+const list=(a,f,e='対象がありません')=>a.length?a.map(f).join(''):`<div class=empty>${e}</div>`;
+const sec=(t,b)=>`<h3>${t}</h3><div class=card>${b}</div>`;
+const seg=(o,c,f)=>`<div class=seg>${o.map((x,i)=>`<button class="${i==c?'on':''}" onclick="${f}(${i})">${x}</button>`).join('')}</div>`;
+
+/* ---------- screens ---------- */
+function homeX(){const l=D.eps.find(e=>e.id===P.last&&vis(e));return `<div style="display:flex;gap:8px;margin:0 0 8px">${l?`<button class="btn o grow" onclick="go('ep','${l.id}')">▶ 続きから：${esc(l.title.slice(0,10))}</button>`:''}<button class="btn grow" onclick="randEp()">🎲 おまかせで一冊</button><button class="btn o" onclick="omikuji()">🎴 おみくじ</button></div>`}
+function randEp(){const p=D.eps.filter(e=>vis(e)&&(!e.fol||fl().includes(e.author)||e.author===P.name));if(!p.length)return toast('読める作品がありません');go('ep',p[Math.floor(Math.random()*p.length)].id)}
+const hue=s=>[...String(s)].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7);
+function cov(x,w,h){const r=Math.max(6,w/8);return x.img?`<img src="${x.img}" style="width:${w}px;height:${h}px;border-radius:${r}px;object-fit:cover;display:block;flex:none">`:`<div style="width:${w}px;height:${h}px;border-radius:${r}px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:${w/2.4}px;background:linear-gradient(135deg,hsl(${hue(x.id)},70%,55%),hsl(${(hue(x.id)+50)%360},70%,38%))">${esc(String(x.title).slice(0,1))}</div>`}
+function ago(t){const m=Math.floor((Date.now()-t)/6e4);return m<1?'たった今':m<60?m+'分前':m<1440?Math.floor(m/60)+'時間前':Math.floor(m/1440)+'日前'}
+const cd=(x,r)=>`<div class=cd onclick="go('${r?'room':'ep'}','${x.id}')">${cov(x,110,150)}<b>${esc(x.title)}</b><small>${esc(x.author)}</small><small>${ago(x.date)}${r?'・'+x.subs.length+'購読':''}</small></div>`;
+const cds=(t,a,r)=>`<h3>${t}</h3>${a.length?`<div class=cds>${a.map(x=>cd(x,r)).join('')}</div>`:'<div class=empty>対象がありません</div>'}`;
+const fol=n=>Object.entries({...PR,[P.name]:{following:fl()}}).filter(([k,v])=>k!==n&&(v.following||[]).includes(n)).length;
+const crCard=n=>`<div onclick="go('author','${q(n)}')">${av(n)}<br>${esc(n)}<small>${fol(n)}人</small>${LIVES.includes(n)?'<span class=badge>LIVE</span>':''}</div>`;
+let adI=0;
+const ADS=[['🏆','冬の短編コンテスト','開催中 11/20〜12/20 ｜ テーマ「はじまり」','#ff7a18,#af002d'],['🎬','ライブが進化','配信者/視聴者の専用画面・ギフト・朗読台本','#ff4fa3,#8a3ffc'],['📣','お知らせ','クラウド同期が使えるようになりました','#2f6bff,#00c6ff'],['🆕','アプデ情報','リレー小説・読書BGM・ショップ・通知を追加','#8a3ffc,#ff4fd8'],['🎯','デイリーミッション','毎日4つ達成でポイントGET！','#11998e,#38ef7d'],['🎙','ライブ配信フェス','12/5 20:00〜 人気作家が集合','#f7971e,#ffd200'],['📅','毎週イベント開催','11/23〜 毎週月曜スタート｜三題噺・感想リレー・一行小説・完走','#11998e,#2f6bff'],['🧰','新機能5つ追加','しおり・ハイライト・感情グラフ・推敲・表紙メーカー','#ff4fa3,#ffb300']];
+const adBar=()=>`<div class=adb>${ADS.map((a,i)=>`<div class="sl ${i==adI?'on':''}" style="background:linear-gradient(135deg,${a[3].split(',')[0]},${a[3].split(',')[1]})"><i class=s1></i><i class=s2></i><i class=s3></i><i class=s4></i><div class=tx><div style="font-size:34px">${a[0]}</div><b>${a[1]}</b><small>${a[2]}</small></div></div>`).join('')}<div class=dots>${ADS.map((a,i)=>`<span class="${i==adI?'on':''}"></span>`).join('')}</div></div>`;
+setInterval(()=>{const s=document.querySelectorAll('.adb .sl');if(!s.length)return;adI=(adI+1)%s.length;s.forEach((e,i)=>e.classList.toggle('on',i==adI));document.querySelectorAll('.adb .dots span').forEach((e,i)=>e.classList.toggle('on',i==adI))},4000);
+const MS=[['read','📖 作品を1つ読む'],['like','❤️ いいねする'],['comment','💬 感想を書く'],['post','✏️ 作品を投稿する']];
+function mis(k){const d=new Date().toDateString();if(!P.dm||P.dm.d!==d)P.dm={d,done:{}};if(P.dm.done[k])return;P.dm.done[k]=1;P.pt=(P.pt||0)+10;if(Object.keys(P.dm.done).length===MS.length){P.pt+=20;toast('🎉 全ミッション達成！ +30pt')}else toast('✅ ミッション達成 +10pt');boom();save()}
+function missionCard(){const d=P.dm&&P.dm.d===new Date().toDateString()?P.dm.done:{},n=MS.filter(m=>d[m[0]]).length;
+  return `<h3>デイリーミッション（${n}/${MS.length}）</h3><div class=card>${MS.map(m=>`<div class=row style="cursor:default"><span>${d[m[0]]?'✅':'⬜'}</span><div class=grow>${m[1]}</div><small>+10pt</small></div>`).join('')}<div class=empty>所持ポイント：<b>${P.pt||0}pt</b>　全達成ボーナス +20pt</div></div>`}
+const events=()=>`<h3>開催イベント概要</h3><div class=card>${[['🏆','冬の短編コンテスト','11/20〜12/20 ｜ 5,000字以内・テーマ「はじまり」'],['📂','Room開設キャンペーン','11月末まで ｜ 新規Room開設で限定バッジ'],['🎙','ライブ配信フェス','12/5 20:00〜 ｜ 人気作家が朗読＆雑談'],['🎯','ミッション週間','毎日達成でポイント2倍']].map(e=>`<div class=row style="cursor:default"><span style="font-size:24px">${e[0]}</span><div class=grow><b>${e[1]}</b><small>${e[2]}</small></div></div>`).join('')}</div>`;
+function liveSec(){if(!LIVES.length)return `<h3 style="margin-left:0">ライブ配信</h3><div class=card style="margin:0"><div class=empty>配信中のライブはありません。「投稿」タブの「ライブ」から始められます</div></div>`;return `<h3 style="margin-left:0">今人気のライブ配信</h3><div class=strip style="margin:0 -16px">${LIVES.slice(0,10).map(n=>`<div onclick="startLive('${q(n)}')"><div class=ring>🎥</div>${esc(n)}<br><span class=badge>LIVE</span><small>👀 ${100+hue(n)*3}</small></div>`).join('')}</div>`}
+function homeL(){
+  const all=D.eps.filter(vis).filter(e=>!Q||[e.title,e.author,...e.tags].some(s=>s.includes(Q))||(rm(e.room)?.title||'').includes(Q));
+  const age=x=>1+(Date.now()-x.date)/864e5,f=fl(),rooms=D.rooms.filter(r=>!Q||[r.title,r.author].some(s=>s.includes(Q)));
+  const newest=[...all].sort((a,b)=>b.date-a.date),lk={};
+  D.eps.filter(vis).forEach(e=>lk[e.author]=(lk[e.author]||0)+e.likes.length);
+  const au=Object.keys(lk).filter(a=>a!=='運営').sort((a,b)=>lk[b]-lk[a]),rec=au.filter(a=>a!==P.name&&!f.includes(a)).slice(0,10),none='<div class=empty>対象がありません</div>';
+  return shelf()+cds('📈 人気急上昇の作品',[...all].sort((a,b)=>b.likes.length/age(b)-a.likes.length/age(a)).slice(0,10))
+   +cds('👥 フォロー中の作品',newest.filter(e=>f.includes(e.author)).slice(0,10))
+   +cds('🆕 最新の作品',newest.slice(0,20))
+   +cds('🔥 人気急上昇のroom',[...rooms].sort((a,b)=>b.subs.length/age(b)-a.subs.length/age(a)).slice(0,10),1)
+   +cds('📂 購読中のroom新着',rooms.filter(r=>r.subs.includes(P.name)).sort((a,b)=>b.date-a.date).slice(0,10),1)
+   +`<h3>🌟 TOPクリエイター</h3><div class=strip>${au.slice(0,20).map(crCard).join('')||none}</div>`
+   +`<h3>💡 おすすめのクリエイター</h3><div class=strip>${rec.map(crCard).join('')||none}</div>`+cds('🤝 リレー小説（参加募集中）',all.filter(e=>e.rl&&(e.parts||[]).length<20).slice(0,10))+events()+weekly()+missionCard();
+}
+function home(){return `<div class=pad><input id=sq placeholder="作者・タイトル・タグ・ライブ・room" value="${esc(Q)}" oninput="Q=this.value;$('#hl').innerHTML=homeL()"><div class=hero><div class=logo>小説note</div><i style="right:6%;top:0;font-size:26px;color:#ffb300">★</i><i style="right:24%;top:30px;color:#ff4fa3;animation-delay:-1s">✦</i><i style="left:58%;top:-4px;color:#2f6bff;animation-delay:-2s">●</i><i style="right:0;top:48px;color:#11c27a;animation-delay:-3s">▲</i></div>${adBar()}${homeX()}${liveSec()}<div id=hl style="margin:0 -16px">${homeL()}</div></div>`}
+
+function ranking(){
+  const e=D.eps.filter(vis),t=byLikes(e).slice(0,40);
+  return `<h1 class=lt>ランキング (日替わり)</h1>`+sec('🏆 TOP 作品40',list(t,epRow))
+   +sec('📂 TOP room40',list([...D.rooms].sort((a,b)=>b.subs.length-a.subs.length).slice(0,40),rmRow))
+   +sec('🆕 最新の作品40',list([...e].sort((a,b)=>b.date-a.date).slice(0,40),epRow))
+   +sec('👑 連続TOPの作品',list(t.slice(0,5),epRow));
+}
+
+function ed(k){
+  cur=k;const f=Fm[k],ok=f.title&&f.desc&&f.body,edit=k==='e';
+  return `<div class=card>
+  <input placeholder="タイトル" value="${esc(f.title)}" oninput="Fm.${k}.title=this.value;chk()">
+  <input placeholder="説明（あらすじ）" value="${esc(f.desc)}" oninput="Fm.${k}.desc=this.value;chk()">
+  <input placeholder="タグ(カンマ区切り)" value="${esc(f.tags)}" oninput="Fm.${k}.tags=this.value;chk()">
+  <select onchange="Fm.${k}.room=this.value;chk()"><option value="">単作 (Roomなし)</option>${D.rooms.filter(r=>r.author===P.name).map(r=>`<option value="${r.id}" ${f.room===r.id?'selected':''}>${esc(r.title)}</option>`).join('')}</select>
+  <label class=row style="display:block">${f.img?`<img src="${f.img}" style="width:70px;height:94px;object-fit:cover;border-radius:8px">`:'🖼 表紙を選択（なしなら自動生成）'}<input type=file accept="image/*" hidden onchange="readImg(this.files[0],400,d=>{Fm.${k}.img=d;render()})"></label><textarea placeholder="本文" oninput="Fm.${k}.body=this.value;chk();$('#cc').textContent=ccT(this.value.length)">${esc(f.body)}</textarea><small id=cc style="padding:0 14px 8px">${ccT(f.body.length)}</small><div class=tb style="padding:0 14px"><button onclick="lint()">🔍 推敲チェック</button><button onclick="cmOpen()">🎨 表紙メーカー</button></div>
+  <label class=tg>予約投稿<input type=datetime-local style="width:auto" value="${f.at?new Date(f.at-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16):''}" onchange="Fm.${k}.at=this.value?new Date(this.value).getTime():0"></label><label class=tg>パブリック（非公開オフ）<input type=checkbox ${f.pub?'checked':''} onchange="Fm.${k}.pub=this.checked;chk()"></label>
+  <label class=tg style="border:0">フォロワー限定<input type=checkbox ${f.fol?'checked':''} onchange="Fm.${k}.fol=this.checked;chk()"></label></div>
+  <button id=sb class="btn w" ${ok?'':'disabled'} onclick="submitEp('${k}')">${edit?'更新する':'投稿する'}</button>
+  ${ok?'':'<small style="margin:0 16px">タイトル・あらすじ・本文がそろうと投稿できます</small>'}`;
+}
+const chk=()=>{const f=Fm[cur];$('#sb').disabled=!(f.title&&f.desc&&f.body);if(cur==='n')try{localStorage.setItem('nn_draft',JSON.stringify(f))}catch(e){}};
+function submitEp(k){
+  const f=Fm[k],tags=f.tags.split(',').map(s=>s.trim()).filter(Boolean);
+  if(k==='e'){const e=D.eps.find(x=>x.id===f.id);Object.assign(e,{title:f.title,desc:f.desc,body:f.body,pub:f.pub,fol:f.fol,room:f.room,tags,img:f.img||'',at:f.at||0});stack.pop();toast('更新しました')}
+  else{D.eps.push({id:uid(),title:f.title,desc:f.desc,body:f.body,author:P.name,room:f.room,likes:[],marks:[],tags,pub:f.pub,fol:f.fol,date:Date.now(),comments:[],img:f.img||'',at:f.at||0});mis('post');const bn=evPost(tags,f.body);Fm.n=newEp();try{localStorage.removeItem('nn_draft')}catch(e){}tab=0;stack=[];toast('投稿しました'+(bn?'　🎁イベントボーナス +'+bn+'pt':''))}
+  save();render(1);
+}
+function roomForm(){const f=Fm.r;return `<div class=card><input placeholder="Room名" value="${esc(f.title)}" oninput="Fm.r.title=this.value;$('#rb').disabled=!this.value">
+  <input placeholder="説明" value="${esc(f.desc)}" oninput="Fm.r.desc=this.value">
+  <label class=row style="display:block">${f.img?`<img src="${f.img}" style="width:100%;height:100px;object-fit:cover;border-radius:10px">`:'🖼 表紙写真を選択'}<input type=file accept="image/*" hidden onchange="readImg(this.files[0],600,d=>{Fm.r.img=d;render()})"></label></div>
+  <button id=rb class="btn w" ${f.title?'':'disabled'} onclick="mkRoom()">Roomを開設</button>`}
+function mkRoom(){const f=Fm.r;D.rooms.push({id:uid(),title:f.title,desc:f.desc,author:P.name,img:f.img,subs:[],date:Date.now()});Fm.r={title:'',desc:'',img:''};save();tab=0;toast('Roomを開設しました');render(1)}
+function liveForm(){return `<div class=card><input placeholder="配信タイトル" value="${esc(Fm.l.title)}" oninput="Fm.l.title=this.value;$('#lb').disabled=!this.value"></div><button id=lb class="btn w" ${Fm.l.title?'':'disabled'} onclick="startLive('${q(P.name)}')">ライブ開始</button>`}
+function post(){return `<h1 class=lt>新規作成</h1>${seg(['作品','Room','ライブ','リレー'],mode,'setMode')}${mode==0?pomoH():''}${[ed('n'),roomForm(),liveForm(),relayForm()][mode]}`}
+const setMode=i=>{mode=i;render()};
+
+function reader(id){
+  const e=D.eps.find(x=>x.id===id);if(!e)return '<div class=empty>作品が見つかりません</div>';
+  const me=P.name,isF=fl().includes(e.author)||e.author===me,R=P.r,nc=e.body.length;
+  if(e.fol&&!isF)return `<div class=lock><div style="font-size:40px">🔒</div><h3 style="margin:8px 0 16px">フォロワー限定作品</h3><button class=btn onclick="go('author','${q(e.author)}')">作者プロフィールへ</button></div>`;
+  const liked=e.likes.includes(me),bm=e.marks.includes(me),last=e.comments.length&&e.comments[e.comments.length-1].a===me;
+  return `<div id=pgb></div><div class=pad><div style="display:flex;justify-content:center;margin-bottom:10px">${cov(e,120,160)}</div><div style="display:flex;align-items:center;gap:8px"><h1 style="margin:0;flex:1;font-size:28px">${esc(e.title)}</h1>${e.author===me?`<button class=del title="編集" onclick="editEp('${e.id}')">✏️</button>`:''}</div>
+  <a style="color:var(--acd);font-weight:700;cursor:pointer" onclick="go('author','${q(e.author)}')">作者: ${esc(e.author)} (タップでフォロー)</a>
+  ${e.tags.length?`<small>${e.tags.map(t=>'#'+esc(t)).join(' ')}</small>`:''}
+  <p style="color:var(--sub);font-size:14px">${esc(e.desc)}</p><hr style="border:0;border-top:1px solid var(--line)">
+  <small style="margin-top:8px">${ago(e.date)}・${nc}字・約${Math.max(1,Math.round(nc/500))}分で読めます</small>
+  <div class=tb><button onclick="rs('fs',-1)">A−</button><button onclick="rs('fs',1)">A＋</button><button onclick="rs('th')">${['☀️ ライト','📜 セピア','🌙 ダーク'][R.th]}</button><button style="${R.vert?'background:var(--ac);color:#111':''}" onclick="rs('vert')">縦書き</button><button onclick="speak('${e.id}')">🔊 読み上げ</button><button onclick="copyEp('${e.id}')">📋 コピー</button><button onclick="dlEp('${e.id}')">⬇ .txt</button><button onclick="quoteCard('${e.id}')">🖼 名言カード</button><button onclick="hlSave('${e.id}')" onmousedown="event.preventDefault()">🖍 ハイライト</button><button onclick="emoG('${e.id}')">📈 感情グラフ</button><button onclick="bgm()">${['🎵 BGM','🌧 雨','🌊 波','🔥 焚き火','🌬 風'][BGk]}</button><button onclick="sleepT()">${SLP?'😴 ON':'😴 30分'}</button></div>
+  <div class="body ${['','sepia','dk'][R.th]} ${R.vert?'vert':''}" style="font-size:${R.fs}px">${hlBody(e)}</div>
+  ${e.rl?relayH(e):''}${rnav(e)}<div class=acts><button style="color:${liked?'#ff2d78':''}" onclick="like('${e.id}')">${liked?'♥':'♡'} ${e.likes.length}</button><button style="color:${bm?'#2f6bff':''}" onclick="mark('${e.id}')">${bm?'🔖':'📑'}</button></div>
+  <div class=tb>${RXE.map(x=>`<button style="${((e.rx||{})[x]||[]).includes(me)?'background:var(--ac);color:#111':''}" onclick="react('${e.id}','${x}')">${x} ${((e.rx||{})[x]||[]).length}</button>`).join('')}</div><h3 style="margin:0 0 8px">感想</h3>
+  <div style="display:flex;gap:8px"><input id=ci placeholder="コメント..." oninput="$('#cs').disabled=!this.value||${!!last}"><button id=cs class=btn disabled onclick="sendC('${e.id}')">送信</button></div>
+  ${last?'<small style="color:var(--red)">連続でコメントはできません</small>':''}
+  ${[...e.comments].sort((a,b)=>b.d-a.d).map(c=>`<div class=cm><small><b>${esc(c.a)}</b></small>${esc(c.t)}</div>`).join('')}</div>`;
+}
+function rs(k,d){const r=P.r;if(k==='fs')r.fs=Math.min(30,Math.max(12,r.fs+d));else if(k==='th')r.th=(r.th+1)%3;else r.vert=1-r.vert;save();render()}
+function speak(id){const s=window.speechSynthesis;if(!s)return toast('この端末は読み上げ非対応です');if(s.speaking){s.cancel();return}const e=D.eps.find(x=>x.id===id),u=new SpeechSynthesisUtterance(e.title+'。'+e.body);u.lang='ja-JP';s.speak(u);toast('読み上げ中（もう一度押すと停止）')}
+const epTxt=id=>{const e=D.eps.find(x=>x.id===id);return e.title+'\n作者: '+e.author+'\n\n'+e.desc+'\n\n'+e.body};
+function copyEp(id){(navigator.clipboard?navigator.clipboard.writeText(epTxt(id)):Promise.reject()).then(()=>toast('コピーしました'),()=>toast('コピーできませんでした'))}
+function dl(name,txt,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1e3)}
+const dlEp=id=>dl(D.eps.find(x=>x.id===id).title+'.txt',epTxt(id),'text/plain');
+const bkExp=()=>dl('novelnote-backup.json',JSON.stringify({D,P}),'application/json');
+function bkImp(f){if(!f)return;f.text().then(t=>{try{const j=JSON.parse(t);D=j.D;P=j.P;P.r=P.r||{fs:17,th:0,vert:0};save();render();toast('読み込みました')}catch(e){toast('読み込めませんでした')}})}
+function wipeLocal(){if(confirm('この端末の作品・設定をすべて初期化します。よろしいですか？')){['nn_db','nn_pf','nn_draft'].forEach(k=>localStorage.removeItem(k));location.reload()}}
+function stats(){const mine=D.eps.filter(e=>e.author===P.name),days=new Set(mine.map(e=>new Date(e.date).toDateString()));
+  let s=0,d=new Date();if(!days.has(d.toDateString()))d.setDate(d.getDate()-1);while(days.has(d.toDateString())){s++;d.setDate(d.getDate()-1)}
+  const ch=mine.reduce((a,e)=>a+e.body.length,0),lk=mine.reduce((a,e)=>a+e.likes.length,0);
+  const bd=[[mine.length>=1,'🌱 初投稿'],[mine.length>=5,'📚 5作品'],[lk>=10,'❤️ 10いいね'],[s>=3,'🔥 3日連続'],[ch>=10000,'✍️ 1万字']].filter(b=>b[0]).map(b=>b[1]);
+  return `<div class=empty>🏅 Lv.${LV().l} ${LV().t}　🔥 連続投稿 <b>${s}</b>日　✍️ 総文字数 <b>${ch}</b>　❤️ 獲得 <b>${lk}</b>　⭐ <b>${P.pt||0}</b>pt</div><div style="padding:0 12px 10px">${bd.map(b=>`<span class=bd>${b}</span>`).join('')||'<small>投稿するとバッジがもらえます</small>'}</div>`}
+function like(id){const e=D.eps.find(x=>x.id===id),i=e.likes.indexOf(P.name);i<0?e.likes.push(P.name):e.likes.splice(i,1);if(i<0)mis('like');save();render()}
+function mark(id){const e=D.eps.find(x=>x.id===id),i=e.marks.indexOf(P.name);i<0?e.marks.push(P.name):e.marks.splice(i,1);save();render()}
+function sendC(id){const e=D.eps.find(x=>x.id===id),t=$('#ci').value.trim();if(!t||(e.comments.length&&e.comments[e.comments.length-1].a===P.name))return;e.comments.push({a:P.name,t,d:Date.now()});mis('comment');evCm();save();render()}
+function editEp(id){const e=D.eps.find(x=>x.id===id);Fm.e={id,title:e.title,desc:e.desc,tags:e.tags.join(','),room:e.room,body:e.body,pub:e.pub,fol:e.fol,img:e.img||'',at:e.at||0};go('edit',id)}
+
+function author(n){
+  const f=fl().includes(n),top=[...new Set(byLikes(D.eps.filter(vis)).slice(0,40).map(e=>e.author))].includes(n)&&n!=='運営';
+  const bio=n===P.name?P.bio:((PR[n]||{}).bio||(LIVES.includes(n)?'公式・人気アカウント':'自己紹介はまだありません'));
+  const eps=D.eps.filter(e=>e.author===n&&vis(e)),rs=D.rooms.filter(r=>r.author===n);
+  return `<div style="text-align:center;padding:20px">${av(n,100)}<h1 style="margin:12px 0 4px">${esc(n)}</h1>${top?'<div style="display:inline-block;color:#e08a00;background:#ffa50022;padding:6px 12px;border-radius:8px;font-weight:700">🌟 TOPクリエイター</div>':''}<p style="color:var(--sub);margin:8px 0">${esc(bio)}</p><div style="display:flex;justify-content:center;gap:28px;margin:10px 0 14px"><div><b>${fol(n)}</b><small>フォロワー</small></div><div><b>${eps.length}</b><small>作品</small></div><div><b>${rs.length}</b><small>Room</small></div></div>${n===P.name?'':`<button class=btn onclick="follow('${q(n)}')">${f?'フォロー解除':'フォローする'}</button>`}</div>`
+   +cds('📂 Room',rs,1)+sec('作品',list(eps,epRow,'まだ作品がありません'));
+}
+function follow(n){n=decodeURIComponent(n);if(n==='運営'){toast('運営のアカウントはフォローできません。');return}const l=fl(),i=l.indexOf(n);i<0?l.push(n):l.splice(i,1);P.following=l.join(',');save();render()}
+
+function roomDetail(id){
+  const r=rm(id);if(!r)return '';const s=r.subs.includes(P.name);
+  return `<div class=pad>${r.img?`<img src="${r.img}" style="width:100%;height:150px;object-fit:cover;border-radius:12px">`:''}<h1 style="margin:8px 0">${esc(r.title)}</h1><div style="color:var(--sub)">${esc(r.desc)}</div><small style="margin:4px 0 10px">購読者数: ${r.subs.length}人・作者 ${esc(r.author)}・${ago(r.date)}</small><button class="btn o" onclick="sub('${r.id}')">${s?'購読解除':'このRoomを購読'}</button></div>`
+   +sec('連載作品',list(D.eps.filter(e=>e.room===r.id&&vis(e)),epRow,'まだ作品がありません'));
+}
+function sub(id){const r=rm(id),i=r.subs.indexOf(P.name);i<0?r.subs.push(P.name):r.subs.splice(i,1);save();render()}
+
+function library(){
+  const me=P.name,eps=D.eps.filter(e=>e.author===me),rs=D.rooms.filter(r=>r.author===me);
+  return `<h1 class=lt>本棚</h1>`
+   +sec('自分の作品',list(eps,e=>`<div class=row>${cov(e,40,54)}<div class=grow onclick="go('ep','${e.id}')"><b>${esc(e.title)}</b> ${e.pub?'':'🙈'}<small>${esc(e.author)}・${ago(e.date)}・❤️ ${e.likes.length}</small></div><button class=del onclick="delEp('${e.id}')">🗑</button></div>`,'まだ作品がありません'))
+   +sec('自分のRoom',list(rs,r=>`<div class=row>${cov(r,40,54)}<div class=grow onclick="go('room','${r.id}')"><b>${esc(r.title)}</b><small>${esc(r.author)}・${ago(r.date)}・${r.subs.length}購読</small></div><button class=del onclick="delRoom('${r.id}')">🗑</button></div>`,'まだRoomがありません'))
+   +sec('🖍 ハイライト帳（'+(P.hl||[]).length+'）',list(P.hl||[],hlRow,'本文の一節を選んで「🖍 ハイライト」を押すと保存されます'))+sec('ブックマーク',list(D.eps.filter(e=>e.marks.includes(me)&&vis(e)),epRow,'ブックマークはありません'));
+}
+function delEp(id){if(confirm('この作品を削除しますか？')){D.eps=D.eps.filter(e=>e.id!==id);cdel('nn_episodes',id);save();render()}}
+function delRoom(id){if(confirm('このRoomを削除しますか？')){D.rooms=D.rooms.filter(r=>r.id!==id);cdel('nn_rooms',id);D.eps.forEach(e=>{if(e.room===id)e.room=''});save();render()}}
+
+function profile(){
+  const n=P.n,nt=[['like','いいね'],['comment','コメント'],['follow','フォロー'],['book','ブックマーク'],['sub','購読']];
+  return `<h1 class=lt style="display:flex;justify-content:space-between;align-items:center">マイプロフ<button class="btn o" onclick="openNotif()">🔔 通知 ${notifs().length||''}</button></h1><div class=card style="text-align:center;padding:16px">
+  <label style="cursor:pointer">${P.img?av(P.name,100):'<span class=av style="width:100px;height:100px;font-size:34px">📷</span>'}<input type=file accept="image/*" hidden onchange="readImg(this.files[0],300,d=>{P.img=d;save();render()})"></label>
+  <input style="text-align:center;font-weight:700;font-size:18px;margin-top:8px" placeholder="名前" value="${esc(P.name)}" oninput="P.name=this.value.trim()||'未設定';save()">
+  <input style="text-align:center;font-size:13px" placeholder="ひとこと" value="${esc(P.bio)}" oninput="P.bio=this.value;save()">
+  <div style="display:flex;margin-top:12px"><div class=grow onclick="openSheet('フォロー中')" style="cursor:pointer"><b>${fl().length}</b><small>フォロー中</small></div><div class=grow onclick="openSheet('フォロワー')" style="cursor:pointer"><b>${fol(P.name)}</b><small>フォロワー</small></div></div></div>`
+  +sec('通知カスタム',nt.map(([k,t])=>`<label class=tg>${t}<input type=checkbox ${n[k]?'checked':''} onchange="P.n.${k}=this.checked;save()"></label>`).join(''))
+  +sec('📊 執筆記録',stats())+sec('🗓 読む・書くカレンダー',heat())+sec('🛒 ポイントショップ（'+(P.pt||0)+'pt）',shopH())
+  +sec('☁️ クラウド同期',`<div class=empty>状態：${esc(cloud)}</div><div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px"><button class="btn o" onclick="cloudPull().then(cloudPush).then(()=>render())">今すぐ同期</button><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="cloudWipe()">自分のクラウド投稿を削除</button></div>`)
+  +sec('💾 バックアップ',`<div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px"><button class="btn o" onclick="bkExp()">書き出し(JSON)</button><label class="btn o">読み込み<input type=file accept=".json" hidden onchange="bkImp(this.files[0])"></label><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="wipeLocal()">この端末を初期化</button></div>`);
+}
+const openSheet=t=>{sheet={t,u:t==='フォロー中'?fl():[]};render()};
+
+/* ---------- live ---------- */
+const BOTS=['みかん','ゆず','たろう','ルナ','そら','ひなた'],BC=['続きが気になる！','声きれい✨','待ってました！','朗読最高','初見です','いい話だ…😭','ワクワクする','拍手👏'],GF=[['⭐','スター',10],['🌹','バラ',30],['👑','王冠',100]];
+const rnd=a=>a[Math.floor(Math.random()*a.length)],mm=t=>String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+function startLive(n){n=decodeURIComponent(n);const host=n===P.name;
+  lv={a:n,host,title:host?(Fm.l.title||'ライブ配信'):n+'のライブ',rec:!host,fx:0,v:host?0:100+hue(n)*3,pk:0,h:0,g:0,c:[{n:'運営',t:'ようこそ！'}],nc:'',pin:host?'':'ハートとギフトで応援してね🎁',ep:'',sc:0,gp:0,sec:0,done:0};
+  lv.t=setInterval(tick,1000);render()}
+function heart(){const f=$('#fx');if(!f)return;const i=document.createElement('i');i.className='hf';i.textContent=rnd(['❤️','💖','💛','💜','✨']);i.style.left=(10+Math.random()*80)+'%';f.appendChild(i);setTimeout(()=>i.remove(),1800)}
+function tick(){if(!lv||lv.done)return;
+  if(lv.rec){lv.sec++;
+    if(lv.sec%3==0){lv.v=Math.max(0,lv.v+Math.floor(Math.random()*5)-(lv.host?0:1));lv.pk=Math.max(lv.pk,lv.v)}
+    if(lv.sec%4==0){lv.c.push({n:rnd(BOTS),t:rnd(BC)});lv.c=lv.c.slice(-40);lcr()}
+    if(lv.sec%2==0&&lv.v>0){const k=lv.v>150?3:1;lv.h+=k;for(let i=0;i<k;i++)heart()}
+    if(lv.host&&lv.sec%15==0&&lv.v>0){lv.g+=rnd([10,30]);lv.c.push({n:rnd(BOTS),t:'🎁 ギフトを贈りました',g:1});lcr()}}
+  if(lv.sc&&$('#scr'))$('#scr').scrollTop+=40;
+  const t=(i,v)=>{const e=$('#'+i);if(e)e.textContent=v};t('vw',lv.v);t('hr',lv.h);t('gf',lv.g);t('el',mm(lv.sec))}
+const lcH=()=>lv.c.map((m,i)=>[m,i]).slice(lv.host?-30:-6).map(([m,i])=>`<div class="${lv.host?'lcm':''}" style="${m.g?'background:linear-gradient(90deg,#ff7a18,#ffd200);color:#111':''}"><b>${esc(m.n)}</b> ${esc(m.t)}${lv.host?`<button class=del style="font-size:13px" onclick="pinC(${i})">📌</button>`:''}</div>`).join('');
+const lcr=()=>{const e=$('#lc');if(e)e.innerHTML=lcH()};
+const pinC=i=>{lv.pin=lv.c[i].t;toast('固定しました');renderLive()};
+const recT=()=>{lv.rec=!lv.rec;if(lv.rec&&!lv.v)lv.v=3+Math.floor(Math.random()*5);renderLive()};
+const setFx=i=>{lv.fx=i;renderLive()},setEp=v=>{lv.ep=v;renderLive()},togSc=()=>{lv.sc=1-lv.sc;renderLive()},gp=()=>{lv.gp=1-lv.gp;renderLive()};
+function sendL(){const t=lv.nc.trim();if(!t)return;lv.c.push({n:P.name,t});lv.nc='';const i=$('#lci');if(i)i.value='';lcr()}
+const likeL=()=>{lv.h++;heart();heart();heart()};
+function gift(i){const g=GF[i];if((P.pt||0)<g[2])return toast('ポイントが足りません（ミッション・おみくじで貯めよう）');P.pt-=g[2];save();lv.c.push({n:P.name,t:g[0]+' '+g[1]+'を贈りました',g:1});boom();lcr();toast(g[0]+' を贈りました -'+g[2]+'pt')}
+function endLive(){if(lv.host&&lv.sec>0&&!lv.done){lv.done=1;P.pt=(P.pt||0)+lv.g+Math.floor(lv.pk/5);save();boom();renderLive();return}clearInterval(lv.t);lv=null;render()}
+const inRow=()=>`<div style="display:flex;gap:8px;padding:12px 14px"><input id=lci placeholder="コメントを入力..." value="${esc(lv.nc)}" oninput="lv.nc=this.value" onkeydown="event.key=='Enter'&&sendL()"><button class=btn onclick="sendL()">送信</button></div>`;
+function hostH(){const sc=D.eps.find(x=>x.id===lv.ep);return `<div class=nb style="background:linear-gradient(90deg,#ff4fa3,#ffb300)"><span class=badge>LIVE</span><b style="flex:1;color:#111">${esc(lv.title)}</b><button style="color:#111" onclick="endLive()">配信終了</button></div>
+<div class=lvt><div><b id=vw>${lv.v}</b>👀 視聴者</div><div><b id=hr>${lv.h}</b>❤️</div><div><b id=gf>${lv.g}</b>🎁 pt</div><div><b id=el>${mm(lv.sec)}</b>⏱</div></div>
+<div class=vstage style="height:230px;align-items:center;justify-content:center"><div id=fx style="position:absolute;inset:0"></div><div class=ring style="border-color:#fff;width:84px;height:84px">${av(lv.a,70,'20px')}</div><button class=rec onclick="recT()"><i style="font-size:40px;font-style:normal">${lv.rec?'⏸':'⏺'}</i><br>${lv.rec?'配信中（タップで一時停止）':'タップで配信開始'}</button></div>
+${seg(['ノーマル','エコー','ロボット','天使'],lv.fx,'setFx')}
+<div style="padding:0 14px"><input placeholder="📌 固定コメント（視聴者に表示）" value="${esc(lv.pin)}" oninput="lv.pin=this.value"></div>
+<h3>📜 朗読台本</h3><div style="display:flex;gap:8px;padding:0 14px 8px"><select onchange="setEp(this.value)"><option value="">台本なし</option>${D.eps.filter(x=>x.author===P.name).map(x=>`<option value="${x.id}" ${lv.ep===x.id?'selected':''}>${esc(x.title)}</option>`).join('')}</select><button class="btn o" style="white-space:nowrap" onclick="togSc()">${lv.sc?'⏹ 自動':'▶ 自動'}スクロール</button></div>${sc?`<div class=scr id=scr>${esc(sc.body)}</div>`:''}
+<h3>💬 コメント</h3><div id=lc class=card style="padding:4px 12px">${lcH()}</div>${inRow()}`}
+function viewH(){return `<div class=vstage><div style="display:flex;align-items:center;gap:8px;padding:10px;position:relative;z-index:2">${av(lv.a,40)}<div class=grow><b>${esc(lv.a)}</b><small style="color:#fffc"><span class=badge>LIVE</span> 👀 <span id=vw>${lv.v}</span>・⏱ <span id=el>${mm(lv.sec)}</span></small></div><button class=btn style="padding:6px 12px" onclick="follow('${q(lv.a)}')">${fl().includes(lv.a)?'フォロー中':'＋フォロー'}</button><button class=rec style="font-size:20px" onclick="endLive()">✕</button></div>
+<div id=fx style="position:absolute;inset:0;pointer-events:none"></div>
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px"><div class=ring style="border-color:#fff;width:84px;height:84px">${av(lv.a,70)}</div><b>${esc(lv.title)}</b>${lv.pin?`<div style="background:#fff3;border-radius:10px;padding:3px 10px;font-size:13px">📌 ${esc(lv.pin)}</div>`:''}</div>
+<div id=lc class=vchat>${lcH()}</div><div class=vside><button onclick="likeL()">❤️</button><button onclick="gp()">🎁</button></div></div>
+${lv.gp?`<div class=lvt>${GF.map((g,i)=>`<div onclick="gift(${i})" style="cursor:pointer;font-size:28px">${g[0]}<b style="font-size:12px">${g[2]}pt</b></div>`).join('')}<small style="width:100%;text-align:center">所持 ${P.pt||0}pt</small></div>`:''}${inRow()}`}
+const sumH=()=>`<div class=lock><div style="font-size:48px">🎉</div><h2>配信おつかれさま！</h2><div class=lvt><div><b>${mm(lv.sec)}</b>配信時間</div><div><b>${lv.pk}</b>最大視聴</div><div><b>${lv.h}</b>❤️</div><div><b>${lv.g}</b>🎁pt</div></div><p>ボーナス <b>+${lv.g+Math.floor(lv.pk/5)}pt</b> を獲得！</p><button class=btn onclick="endLive()">閉じる</button></div>`;
+function renderLive(){const e=$('#live');if(e)e.innerHTML=lv.done?sumH():lv.host?hostH():viewH()}
+
+/* ---------- 新機能 ---------- */
+function boom(){let c=$('#cf');if(!c){c=document.createElement('div');c.id='cf';document.body.appendChild(c)}for(let i=0;i<40;i++){const p=document.createElement('i');p.style.cssText=`left:${Math.random()*100}%;background:hsl(${Math.random()*360},90%,60%);animation-delay:${Math.random()*.5}s;animation-duration:${1.5+Math.random()}s`;c.appendChild(p);setTimeout(()=>p.remove(),3200)}}
+const OM=[['大吉','🌈',50],['中吉','🌟',30],['小吉','🍀',20],['吉','🌼',10],['末吉','☁️',5]];
+function omikuji(){const d=new Date().toDateString();if(P.om&&P.om.d===d){const e=D.eps.find(x=>x.id===P.om.e&&vis(x));toast('今日は'+P.om.k+'！'+(e?'ラッキー作品：'+e.title:''));if(e)go('ep',e.id);return}
+  const o=rnd(OM),p=D.eps.filter(vis),e=p.length?rnd(p):null;P.om={d,k:o[0],e:e&&e.id};P.pt=(P.pt||0)+o[2];save();boom();toast(o[1]+' '+o[0]+'！ +'+o[2]+'pt'+(e?' ラッキー作品を開きます':''));if(e)setTimeout(()=>go('ep',e.id),1200)}
+function LV(){const x=(P.pt||0)+D.eps.filter(e=>e.author===P.name).length*30,l=Math.floor(Math.sqrt(x/20))+1;return{l,t:['見習い','駆け出し','語り手','作家','人気作家','名作家','巨匠','伝説'][Math.min(7,Math.floor((l-1)/2))]}}
+let PM=0,PT=0;const TH=['雨の日の図書館','最後の手紙','猫が話し出した朝','消えた駅','星に名前を付ける仕事','忘れ物センターの秘密','100年後の約束','夜明け前の電話'];
+function pomo(){if(PM){clearInterval(PM);PM=0;PT=0}else{PT=1500;PM=setInterval(()=>{PT--;const e=$('#pm');if(e)e.textContent=mm(PT);if(PT<=0){clearInterval(PM);PM=0;P.pt=(P.pt||0)+20;save();boom();toast('⏱ 25分お疲れさま！ +20pt');render()}},1000)}render()}
+const pomoH=()=>`<div class=card style="margin-bottom:12px"><div class=row style="cursor:default"><span>⏱</span><b id=pm style="font-size:20px">${mm(PT||1500)}</b><div class=grow></div><button class="btn o" onclick="pomo()">${PM?'中止':'25分集中'}</button></div><div class=row style="cursor:default"><div class=grow id=th>お題ガチャ</div><button class="btn o" onclick="$('#th').textContent='お題：'+rnd(TH)">🎲</button></div></div>`;
+const RXE=['😭','😂','🔥','✨','🤔'];
+function react(id,x){const e=D.eps.find(v=>v.id===id);e.rx=e.rx||{};const a=e.rx[x]=e.rx[x]||[],i=a.indexOf(P.name);i<0?a.push(P.name):a.splice(i,1);e.u=Date.now();save();render()}
+function quoteCard(id){const e=D.eps.find(x=>x.id===id),t=(String(getSelection()).trim()||e.body.replace(/\s+/g,' ')).slice(0,80),c=document.createElement('canvas');c.width=c.height=900;const g=c.getContext('2d'),h=hue(e.id),gr=g.createLinearGradient(0,0,900,900);gr.addColorStop(0,`hsl(${h},75%,55%)`);gr.addColorStop(1,`hsl(${(h+70)%360},75%,35%)`);g.fillStyle=gr;g.fillRect(0,0,900,900);
+  g.fillStyle='#fff3';g.beginPath();g.arc(780,120,160,0,7);g.fill();g.beginPath();g.arc(100,820,110,0,7);g.fill();
+  g.fillStyle='#fff';g.font='bold 54px sans-serif';g.textBaseline='top';let y=200,l='';for(const ch of t){if(g.measureText(l+ch).width>760){g.fillText(l,70,y);y+=84;l=''}l+=ch}g.fillText(l,70,y);
+  g.font='30px sans-serif';g.fillText('『'+e.title+'』 '+e.author+' — 小説note',70,800);
+  c.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='quote.png';a.click();toast('名言カードを保存しました（本文を選択して押すと好きな一節に）')})}
+
+/* ---------- 新機能5 ---------- */
+// 1) リレー小説
+const relayForm=()=>{const f=Fm.rl,ok=f.title&&f.text,c=`$('#rb2').disabled=!(Fm.rl.title&&Fm.rl.text)`;return `<div class=card><input placeholder="リレーのタイトル" value="${esc(f.title)}" oninput="Fm.rl.title=this.value;${c}"><input placeholder="お題・ルール（例：ジャンルは自由）" value="${esc(f.desc)}" oninput="Fm.rl.desc=this.value"><textarea style="min-height:110px" maxlength=200 placeholder="第1パート（200字まで）" oninput="Fm.rl.text=this.value;${c}">${esc(f.text)}</textarea></div><button id=rb2 class="btn w" ${ok?'':'disabled'} onclick="mkRelay()">リレー小説をはじめる</button><small style="margin:0 16px">他の人が順番に続きを書きます（連続投稿不可・全20パート・参加で+5pt）</small>`};
+function mkRelay(){const f=Fm.rl,d=Date.now();D.eps.push({id:uid(),title:f.title,desc:f.desc||'みんなで書くリレー小説',body:f.text,author:P.name,room:'',likes:[],marks:[],tags:['リレー小説'],pub:true,fol:false,date:d,comments:[],img:'',at:0,rl:1,parts:[{a:P.name,t:f.text,d}]});Fm.rl={title:'',desc:'',text:''};save();boom();tab=0;stack=[];toast('リレー小説をはじめました');render(1)}
+function relayH(e){const ps=e.parts||[],last=ps.length&&ps[ps.length-1].a===P.name;
+  return `<div class=card style="margin:12px 0;padding:12px"><b>🤝 リレー小説 ${ps.length}/20</b><small>参加者：${[...new Set(ps.map(p=>p.a))].map(esc).join('、')}</small>${ps.length>=20?'<b style="color:var(--acd)">🎉 完結しました！</b>':last?'<small>他の人の続きを待っています…</small>':`<textarea id=rt maxlength=200 placeholder="続きを書く（200字まで）" style="min-height:90px;margin-top:8px"></textarea><button class="btn" style="margin-top:8px" onclick="addPart('${e.id}')">続きを投稿 +5pt</button>`}</div>`}
+function addPart(id){const e=D.eps.find(x=>x.id===id),t=$('#rt').value.trim().slice(0,200),ps=e.parts;if(!t||ps.length>=20||ps[ps.length-1].a===P.name)return;ps.push({a:P.name,t,d:Date.now()});e.body=ps.map(x=>x.t).join('\n\n');e.u=Date.now();P.pt=(P.pt||0)+(evOn('relay')?15:5);save();boom();render()}
+// 2) 読書BGM＋スリープタイマー
+let AC=null,BG=null,BGk=0,SLP=0;
+function bgm(){BGk=(BGk+1)%5;if(BG){try{BG.s.stop();BG.o&&BG.o.stop()}catch(e){}BG=null}
+  const B=[0,['highpass',1500,.12,0],['lowpass',450,.9,.12],['lowpass',250,1.4,0],['bandpass',700,.9,.2]];
+  if(BGk){AC=AC||new(window.AudioContext||window.webkitAudioContext)();const[ty,fq,vol,lf]=B[BGk],n=AC.sampleRate*2,b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=Math.random()*2-1;
+    const s=AC.createBufferSource();s.buffer=b;s.loop=true;const f=AC.createBiquadFilter();f.type=ty;f.frequency.value=fq;const g=AC.createGain();g.gain.value=vol;s.connect(f);f.connect(g);g.connect(AC.destination);let o=null;
+    if(lf){o=AC.createOscillator();o.frequency.value=lf;const og=AC.createGain();og.gain.value=vol*.6;o.connect(og);og.connect(g.gain);o.start()}s.start();BG={s,o}}
+  toast(['🎵 BGMなし','🌧 雨の音','🌊 波の音','🔥 焚き火の音','🌬 風の音'][BGk]);render()}
+function sleepT(){if(SLP){clearTimeout(SLP);SLP=0;toast('スリープタイマー解除')}else{SLP=setTimeout(()=>{SLP=0;BGk=4;bgm()},18e5);toast('😴 30分後にBGMを止めます')}render()}
+// 3) 読む・書くカレンダー
+const ymd=t=>{const d=new Date(t);return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()};
+function rlog(id){const d=ymd(Date.now());P.rl=P.rl||{};const a=P.rl[d]=P.rl[d]||[];if(!a.includes(id)){a.push(id);save()}}
+function heat(){const a={},n=14*7+new Date().getDay();D.eps.filter(e=>e.author===P.name).forEach(e=>{const k=ymd(e.date);a[k]=(a[k]||0)+2});Object.entries(P.rl||{}).forEach(([k,v])=>a[k]=(a[k]||0)+v.length);
+  const st=new Date();st.setDate(st.getDate()-n);let h='';for(let i=0;i<=n;i++){const d=new Date(st);d.setDate(st.getDate()+i);const v=a[ymd(d)]||0;h+=`<i title="${ymd(d)}：${v}" style="background:${['#8882','#c5f26a','#a6f21a','#4ec76a','#11a35a'][v?Math.min(4,Math.ceil(v/2)):0]}"></i>`}
+  return `<div class=hm>${h}</div><small style="padding:0 14px 10px">過去15週間の記録（投稿=2・読んだ作品=1）</small>`}
+// 4) ポイントショップ（テーマ色・アイコン枠）
+const SH=[['t1','🌸 サクラテーマ',100,'#ff4fa3'],['t2','🌊 オーシャンテーマ',100,'#2fa8ff'],['t3','🍊 サンセットテーマ',150,'#ff8a1f'],['t4','🔮 ミスティックテーマ',200,'#8a3ffc'],['f1','🥇 ゴールド枠',80,'0 0 0 3px #ffd200,0 0 14px #ffb300'],['f2','🌈 レインボー枠',150,'0 0 0 3px #ff4fa3,0 0 0 6px #2fd4ff,0 0 0 9px #a6f21a'],['f3','⚡ ネオン枠',120,'0 0 0 3px #fff,0 0 16px 4px #2f6bff']];
+function applyTheme(){const t=SH.find(x=>x[0]===P.th),r=document.documentElement.style;if(t){r.setProperty('--ac',t[3]);r.setProperty('--ac2',t[3]+'99');r.setProperty('--acd',t[3]);r.setProperty('--bt','#fff')}else['--ac','--ac2','--acd','--bt'].forEach(k=>r.removeProperty(k))}
+const shopH=()=>`<div class=row style="cursor:default"><div class=grow>標準に戻す</div><button class="btn o" onclick="equip('')">戻す</button></div>`+SH.map(x=>{const own=(P.own||[]).includes(x[0]),on=P.th===x[0]||P.fr===x[0],t=x[0][0]=='t';return `<div class=row style="cursor:default"><span style="width:22px;height:22px;border-radius:50%;flex:none;background:${t?x[3]:'#8884'};${t?'':'box-shadow:'+x[3]}"></span><div class=grow>${x[1]}</div><button class="btn${own?' o':''}" onclick="buy('${x[0]}')">${on?'装備中':own?'装備':x[2]+'pt'}</button></div>`}).join('');
+function buy(id){const x=SH.find(v=>v[0]===id),own=P.own=P.own||[];if(!own.includes(id)){if((P.pt||0)<x[2])return toast('ポイントが足りません（ミッション・おみくじ・ライブで貯めよう）');P.pt-=x[2];own.push(id);boom();toast(x[1]+' を手に入れた！')}equip(id)}
+function equip(id){if(!id){P.th='';P.fr=''}else if(id[0]=='t')P.th=id;else P.fr=id;save();applyTheme();render()}
+// 5) 通知センター
+function snap(){const e={},r={};D.eps.filter(x=>x.author===P.name).forEach(x=>e[x.id]=[x.likes.filter(v=>v!==P.name).length,x.comments.filter(c=>c.a!==P.name).length]);D.rooms.forEach(x=>r[x.id]=x.subs.filter(v=>v!==P.name).length);P.sn={e,r,f:fol(P.name)};save()}
+function notifs(){const sn=P.sn||{e:{},r:{},f:0},o=[],n=P.n;
+  D.eps.filter(e=>e.author===P.name).forEach(e=>{const b=sn.e[e.id]||[0,0],lk=e.likes.filter(x=>x!==P.name).length,cm=e.comments.filter(c=>c.a!==P.name).length;
+    if(n.like&&lk>b[0])o.push(['❤️','『'+e.title+'』にいいね +'+(lk-b[0]),e.id]);if(n.comment&&cm>b[1])o.push(['💬','『'+e.title+'』に感想 +'+(cm-b[1]),e.id])});
+  D.rooms.filter(r=>r.author===P.name).forEach(r=>{const c=r.subs.filter(x=>x!==P.name).length,b=sn.r[r.id]||0;if(n.sub&&c>b)o.push(['📂','Room『'+r.title+'』の購読 +'+(c-b),''])});
+  const f=fol(P.name);if(n.follow&&f>sn.f)o.push(['🙋','フォロワー +'+(f-sn.f),'']);return o}
+const openNotif=()=>{sheet={t:'🔔 通知',nt:notifs()};snap();render()};
+function sheetHTML(){return `<div class=sheet><div class=nb><button onclick="sheet=null;render()">‹ 閉じる</button><b>${sheet.t}</b></div>${sheet.h?sheet.h:sheet.cm?cmH():sheet.nt?list(sheet.nt,n=>`<div class=row onclick="sheet=null;${n[2]?`go('ep','${n[2]}')`:'render()'}"><span style="font-size:22px">${n[0]}</span><div class=grow>${esc(n[1])}</div></div>`,'新しいお知らせはありません'):list(sheet.u,u=>`<div class=row onclick="sheet=null;go('author','${q(u)}')">${av(u,36)}<b>${esc(u)}</b></div>`,'ユーザーがいません')}</div>`}
+
+/* ---------- 新機能5つ（2026-11追加）---------- */
+// 1) しおり＆読みかけ棚＋Room前後ナビ
+let pgT=0;
+addEventListener('scroll',()=>{const t=stack[stack.length-1];if(!t||t.t!=='ep'||lv)return;const m=document.documentElement.scrollHeight-innerHeight,p=m>0?Math.min(100,Math.round(scrollY/m*100)):0,b=$('#pgb');if(b)b.style.width=p+'%';clearTimeout(pgT);pgT=setTimeout(()=>{P.pg=P.pg||{};P.pgt=P.pgt||{};P.pg[t.a]=p;P.pgt[t.a]=Date.now();try{localStorage.setItem('nn_pf',JSON.stringify(P))}catch(e){}},400)},{passive:true});
+function resume(id){const p=(P.pg||{})[id];if(p>=3&&p<97){scrollTo(0,(document.documentElement.scrollHeight-innerHeight)*p/100);toast('🔖 しおりの位置から再開（'+p+'%）')}}
+const shelf=()=>{const a=D.eps.filter(e=>vis(e)&&(P.pg||{})[e.id]>=3&&P.pg[e.id]<97).sort((x,y)=>(P.pgt[y.id]||0)-(P.pgt[x.id]||0)).slice(0,10);return a.length?`<h3>📖 読みかけ（しおり）</h3><div class=cds>${a.map(x=>`<div class=cd onclick="go('ep','${x.id}')">${cov(x,110,150)}<b>${esc(x.title)}</b><div style="height:5px;background:#8883;border-radius:3px;margin-top:4px"><div style="height:5px;width:${P.pg[x.id]}%;background:var(--c4);border-radius:3px"></div></div><small>${P.pg[x.id]}%読了</small></div>`).join('')}</div>`:''};
+const rnav=e=>{if(!e.room)return '';const s=D.eps.filter(x=>x.room===e.room&&vis(x)&&(!x.fol||fl().includes(x.author)||x.author===P.name)).sort((a,b)=>a.date-b.date),i=s.findIndex(x=>x.id===e.id),p=s[i-1],n=s[i+1];return `<div style="display:flex;gap:8px;margin:12px 0">${p?`<button class="btn o grow" onclick="go('ep','${p.id}')">‹ 前の話</button>`:''}${n?`<button class="btn grow" onclick="go('ep','${n.id}')">次の話 ›</button>`:''}</div>`};
+// 2) ハイライト帳
+const hlBody=e=>(P.hl||[]).filter(h=>h.e===e.id&&/[^\x00-\x7f]/.test(h.t)).reduce((s,h)=>s.split(esc(h.t)).join('<mark>'+esc(h.t)+'</mark>'),esc(e.body));
+function hlSave(id){const s=getSelection(),t=String(s).trim(),n=s.anchorNode;if(t.length<4||!n||!(n.nodeType==1?n:n.parentNode).closest('.body'))return toast('本文の保存したい一節を選択してから押してください（4字以上）');P.hl=P.hl||[];if(P.hl.some(h=>h.e===id&&h.t===t))return toast('保存済みです');P.hl.unshift({e:id,t:t.slice(0,200),d:Date.now()});P.hl=P.hl.slice(0,100);save();toast('🖍 ハイライト帳に保存しました');render()}
+const hlDel=i=>{P.hl.splice(i,1);save();render()};
+const hlRow=(h,i)=>{const e=D.eps.find(x=>x.id===h.e);return `<div class=row style="cursor:default"><div class=grow onclick="${e?`go('ep','${e.id}')`:''}" style="cursor:pointer"><small>『${esc(e?e.title:'削除された作品')}』・${ago(h.d)}</small><div style="background:#ffe06655;border-radius:6px;padding:2px 6px;margin-top:2px">${esc(h.t)}</div></div><button class=del onclick="hlDel(${i})">🗑</button></div>`};
+// 3) 感情グラフ
+const EP=['嬉','楽し','笑','愛','好き','幸','光','希望','優し','温か','ありがとう','感動','輝','安心','夢','約束','再会','微笑','美し','祝'],EN=['悲','泣','涙','死','怖','恐','暗','闇','孤独','寂','絶望','痛','苦し','怒','憎','嫌','別れ','失','消え','裏切','不安','嘘','血','叫','震'];
+function emoG(id){const e=D.eps.find(x=>x.id===id),t=e.body;if(t.length<40)return toast('短すぎて描けません（40字以上の作品で使えます）');
+  const n=12,z=Math.ceil(t.length/n),c=(s,w)=>w.reduce((a,k)=>a+s.split(k).length-1,0),v=[...Array(n)].map((_,i)=>{const s=t.slice(i*z,(i+1)*z);return c(s,EP)-c(s,EN)}),sm=v.map((x,i)=>(v[Math.max(0,i-1)]+2*x+v[Math.min(n-1,i+1)])/4),mx=Math.max(1,...sm.map(Math.abs)),X=i=>20+i*280/(n-1),Y=x=>80-x/mx*60,pk=sm.reduce((b,x,i)=>Math.abs(x)>Math.abs(sm[b])?i:b,0),tot=v.reduce((a,b)=>a+b,0);
+  sheet={t:'📈 感情グラフ',h:`<div class=pad><b>『${esc(e.title)}』</b><svg viewBox="0 0 320 170" style="width:100%;background:var(--card);border-radius:12px;margin-top:8px"><line x1="20" x2="300" y1="80" y2="80" stroke="#8886" stroke-dasharray="4"/><text x="22" y="18" font-size="11" fill="#e5372f">☀ 明るい</text><text x="22" y="160" font-size="11" fill="#2f6bff">☁ 切ない</text><polyline points="${sm.map((x,i)=>X(i)+','+Y(x)).join(' ')}" fill="none" stroke="#8a3ffc" stroke-width="3" stroke-linejoin="round"/>${sm.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x)}" r="${i==pk?6:3}" fill="${i==pk?'#ff4fa3':'#8a3ffc'}"/>`).join('')}<text x="${X(pk)}" y="${Y(sm[pk])+(sm[pk]>=0?-12:20)}" font-size="11" text-anchor="middle" fill="#ff4fa3">山場</text></svg><p>${tot>1?'☀️ 明るい物語':tot<-1?'🌧 切ない物語':'🌤 穏やかな物語'}。山場は物語の約 <b>${Math.round((pk+.5)/n*100)}%</b> 地点です。</p><small>本文の感情語から推定する簡易グラフです（左→右が物語の進行）。</small></div>`};render()}
+// 4) 推敲チェック＆今日の執筆目標
+const ccT=n=>n+'字・原稿用紙'+(n/400).toFixed(1)+'枚'+(P.goal?'・目標'+Math.min(100,Math.round(n/P.goal*100))+'%':'')+(cur=='n'?'・下書き自動保存中':'');
+const setGoal=n=>{P.goal=n;save();lint()};
+function lint(){const t=Fm[cur].body.trim();if(t.length<20)return toast('本文が短すぎます（20字以上で診断できます）');
+  const ss=t.replace(/([。！？!?])/g,'$1\n').split('\n').map(s=>s.trim()).filter(Boolean),avg=Math.round(t.length/ss.length),long=ss.filter(s=>s.length>80),w={};
+  try{for(const x of new Intl.Segmenter('ja',{granularity:'word'}).segment(t))if(x.isWordLike&&x.segment.length>=2&&!/^[ぁ-ん]{2,3}$/.test(x.segment))w[x.segment]=(w[x.segment]||0)+1}catch(e){}
+  const rep=Object.entries(w).filter(a=>a[1]>=4).sort((a,b)=>b[1]-a[1]).slice(0,5),run=(()=>{let m=0,c=0,p='';ss.forEach(s=>{const k=s.slice(-2);c=k===p?c+1:1;p=k;m=Math.max(m,c)});return m})(),
+  ex=(t.match(/[！？!?]/g)||[]).length,dots=(t.match(/\.{3}|・{3}/g)||[]).length,tn=(t.match(/、/g)||[]).length/ss.length,cv=Math.round((t.match(/「[^」]*」/g)||[]).join('').length/t.length*100),g=P.goal||0,
+  today=D.eps.filter(e=>e.author===P.name&&ymd(e.date)===ymd(Date.now())).reduce((a,e)=>a+e.body.length,0)+(cur=='n'?t.length:0),
+  ck=[[1,'📄 '+t.length+'字（原稿用紙 約'+(t.length/400).toFixed(1)+'枚）／'+ss.length+'文'],[avg<=60,'平均文長 '+avg+'字'+(avg<=60?'':'：やや長め。文を区切ると読みやすくなります')],[!long.length,long.length?'80字超の長い文が'+long.length+'件：「'+long[0].slice(0,18)+'…」ほか':'長すぎる文はありません'],[run<3,run<3?'語尾の単調な連続なし':'同じ語尾が'+run+'文連続：文末を変えてみましょう'],[!rep.length,rep.length?'繰り返し多い語：'+rep.map(a=>a[0]+'×'+a[1]).join('、'):'同じ語の使いすぎはありません'],[ex<=t.length/80,'！？ '+ex+'個'+(ex<=t.length/80?'':'：多め。ここぞで使うと効果的です')],[!dots,dots?'「...」「・・・」が'+dots+'か所：「……」に統一すると綺麗です':'三点リーダーの表記OK'],[tn<=3.5,'読点 平均'+tn.toFixed(1)+'個/文'+(tn<=3.5?'':'：やや多めです')],[1,'💬 会話文の割合 '+cv+'%']];
+  sheet={t:'🔍 推敲チェック',h:`<div class=card>${ck.map(c=>`<div class=row style="cursor:default"><span>${c[0]?'✅':'⚠️'}</span><div class=grow>${esc(c[1])}</div></div>`).join('')}</div><h3>🎯 今日の執筆目標</h3><div class=card style="padding:12px"><div style="height:10px;background:#8883;border-radius:5px"><div style="height:10px;width:${g?Math.min(100,today/g*100):0}%;background:linear-gradient(90deg,var(--c4),var(--ac));border-radius:5px"></div></div><small style="margin:6px 0">今日 ${today}字${g?' / '+g+'字':''}</small><div class=tb>${[500,1000,2000,0].map(n=>`<button onclick="setGoal(${n})">${n?n+'字':'目標なし'}</button>`).join('')}</div></div>`};render()}
+// 5) 表紙メーカー
+const CP=[['#ff4fa3','#ffb300'],['#2f6bff','#2fd4ff'],['#11c27a','#a6f21a'],['#8a3ffc','#ff4fd8'],['#1b0a3c','#f72585'],['#333333','#8a8a8a']],CS=['','📖','🌙','🌸','⭐','🐈','🗝️','🌊'],CT=['無地','ドット','ストライプ','星くず'];let CM={t:0,c:0,s:1,v:0};
+const cmOpen=()=>{sheet={t:'🎨 表紙メーカー',cm:1};render();drawCm()},cmR=()=>{const s=$('.sheet'),y=s?s.scrollTop:0;render();$('.sheet').scrollTop=y;drawCm()},cmP=i=>{CM.t=i;cmR()},cmC=i=>{CM.c=i;cmR()},cmS=i=>{CM.s=i;cmR()},cmV=i=>{CM.v=i;cmR()};
+const cmH=()=>`<div class=pad style="text-align:center"><canvas id=cmc width=300 height=400 style="width:210px;height:280px;border-radius:12px"></canvas></div>${seg(CT,CM.t,'cmP')}${seg(CS.map(x=>x||'なし'),CM.s,'cmS')}${seg(['横書き','縦書き'],CM.v,'cmV')}<div style="display:flex;gap:10px;justify-content:center;margin:8px">${CP.map((p,i)=>`<div onclick="cmC(${i})" style="width:34px;height:34px;border-radius:50%;cursor:pointer;background:linear-gradient(135deg,${p[0]},${p[1]});${i==CM.c?'outline:3px solid var(--fg)':''}"></div>`).join('')}</div><button class="btn w" onclick="cmUse()">この表紙を使う</button>`;
+function drawCm(){const c=$('#cmc');if(!c)return;const g=c.getContext('2d'),W=300,H=400,[a,b]=CP[CM.c],gr=g.createLinearGradient(0,0,W,H);gr.addColorStop(0,a);gr.addColorStop(1,b);g.fillStyle=gr;g.fillRect(0,0,W,H);g.fillStyle='#ffffff30';
+  if(CM.t==1)for(let y=10;y<H;y+=30)for(let x=(y/30%2)*15+10;x<W;x+=30){g.beginPath();g.arc(x,y,6,0,7);g.fill()}
+  if(CM.t==2)for(let x=-H;x<W;x+=26){g.save();g.translate(x,0);g.rotate(.6);g.fillRect(0,-50,10,H*2);g.restore()}
+  if(CM.t==3)for(let i=0;i<40;i++){g.font=(8+i%4*5)+'px sans-serif';g.fillText('✦',(i*97)%W,(i*53)%H)}
+  g.textAlign='center';g.fillStyle='#fff';if(CM.s){g.font='64px sans-serif';g.fillText(CS[CM.s],W/2,110)}
+  const t=(Fm[cur].title||'タイトル').slice(0,20);g.shadowColor='#0007';g.shadowBlur=8;g.font='bold 34px sans-serif';
+  if(CM.v)[...t].slice(0,10).forEach((ch,i)=>g.fillText(ch,W-50,150+i*36));else for(let i=0;i<t.length;i+=8)g.fillText(t.slice(i,i+8),W/2,200+i/8*46);
+  g.shadowBlur=0;g.font='16px sans-serif';g.fillText(P.name,W/2,H-22)}
+function cmUse(){Fm[cur].img=$('#cmc').toDataURL('image/jpeg',.85);sheet=null;render();toast('🎨 表紙を設定しました')}
+// 週1イベント（毎週月曜スタート）
+const EVT=[['📚','三題噺ウィーク','2026-11-23','2026-11-29','お題「鍵」「雨」「約束」で短編を。タグ「三題噺」で投稿すると +30pt','sandai'],['💬','感想リレーウィーク','2026-11-30','2026-12-06','感想コメント1件ごとに +5pt 追加（期間中10件まで）','comment'],['✍️','一行小説ウィーク','2026-12-07','2026-12-13','140字以内の作品をタグ「一行小説」で投稿すると +20pt','ichigyo'],['🤝','リレー完走ウィーク','2026-12-14','2026-12-20','リレー小説の続きを書くと +15pt（通常は5pt）','relay']],
+evT=x=>[new Date(x[2]+'T00:00:00').getTime(),new Date(x[3]+'T23:59:59').getTime()],evOn=k=>EVT.find(x=>x[5]===k&&Date.now()>=evT(x)[0]&&Date.now()<=evT(x)[1]);
+function evPost(tg,b){let p=0;if(evOn('sandai')&&tg.includes('三題噺'))p+=30;if(evOn('ichigyo')&&tg.includes('一行小説')&&b.length<=140)p+=20;if(p){P.pt=(P.pt||0)+p;boom()}return p}
+function evCm(){const a=evOn('comment');if(!a)return;P.evc=P.evc||{};if((P.evc[a[2]]||0)>=10)return;P.evc[a[2]]=(P.evc[a[2]]||0)+1;P.pt=(P.pt||0)+5}
+function weekly(){const n=Date.now(),f=d=>d.slice(5).replace('-','/');return `<h3>📅 毎週イベント（毎週月曜スタート）</h3><div class=card>${EVT.map(x=>{const[s,e]=evT(x),on=n>=s&&n<=e;return `<div class=row style="cursor:default;${on?'background:#a6f21a22':''}"><span style="font-size:24px">${x[0]}</span><div class=grow><b>${x[1]}</b> <span class=badge style="${n>e?'background:#888':on?'':'background:var(--c2)'}">${n<s?'あと'+Math.ceil((s-n)/864e5)+'日':on?'開催中':'終了'}</span><small>${f(x[2])}〜${f(x[3])}</small><small>${x[4]}</small></div></div>`}).join('')}</div>`}
+
+/* ---------- navigation ---------- */
+const TABS=[['🏠','ホーム',home],['🏆','ランキング',ranking],['✏️','投稿',post],['📚','本棚',library],['🙂','プロフ',profile]];
+const V={ep:id=>{if(P.last!==id){P.last=id;save()}mis('read');rlog(id);return reader(id)},room:roomDetail,author,edit:()=>ed('e')};
+function go(t,a){stack.push({t,a:decodeURIComponent(a)});render(1)}
+const back=()=>{stack.pop();render(1)};
+const setTab=i=>{tab=i;stack=[];render(1)};
+function render(top){if(top&&window.speechSynthesis)speechSynthesis.cancel();
+  const y=scrollY,t=stack[stack.length-1];let h;
+  if(t){const T={ep:'',room:'Room詳細',author:t.a,edit:'作品を編集'}[t.t];h=`<div class=nb><button onclick="back()">‹ 戻る</button><b>${esc(T)}</b></div>`+V[t.t](t.a)}
+  else h=TABS[tab][2]();
+  $('#app').innerHTML=`<main>${h}</main><nav>${TABS.map((x,i)=>`<button class="${i==tab&&!stack.length?'on':''}" onclick="setTab(${i})"><span>${x[0]}${i==4&&notifs().length?'<u class=nd></u>':''}</span>${x[1]}</button>`).join('')}</nav>${lv?'<div id=live class=live></div>':''}${sheet?sheetHTML():''}`;
+  if(lv)renderLive();
+  scrollTo(0,top?0:y);if(top&&t&&t.t==='ep')resume(t.a);
+}
+if(!P.sn)snap();applyTheme();render();cloudPull().then(cloudPush);setInterval(cloudPull,30000);
+</script>
+</body>
+</html>
