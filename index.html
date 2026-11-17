@@ -142,94 +142,35 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 
 /* ---------- Supabase cloud sync ---------- */
 const SB='https://mzykelberuojpgyieiqv.supabase.co',KEY='sb_publishable_DgxzZQeKj0tz4EELPlNFeg_TH1CcuQD';
-let cloud='未接続',cloudErr='',pushErr='',pullErr='',PR={};const hs={},VER=new Set(),TB=[['nn_episodes','eps'],['nn_rooms','rooms']];
-/* api：失敗時はサーバーの実エラー(HTTP状態・コード・メッセージ)を保持して投げる */
-async function api(p,o={}){let r;
-  try{r=await fetch(SB+'/rest/v1/'+p,{...o,headers:{apikey:KEY,'Content-Type':'application/json',...(o.headers||{})}})}
-  catch(e){const x=new Error('サーバーに接続できません（オフライン／通信遮断）：'+((e&&e.message)||e));x.net=1;throw x}
-  const t=await r.text();
-  if(!r.ok){let j=null;try{j=JSON.parse(t)}catch(e){}
-    const m=(j&&(j.message||j.msg||j.error_description||j.error))||t||r.statusText,x=new Error('HTTP '+r.status+(j&&j.code?' ['+j.code+']':'')+' '+String(m).slice(0,240)+(j&&j.hint?'（ヒント: '+j.hint+'）':''));
-    x.status=r.status;x.code=(j&&j.code)||'';throw x}
-  return t?JSON.parse(t):null}
-/* 失敗理由を日本語で説明 */
-const why=e=>{const m=String((e&&e.message)||e),c=(e&&e.code)||'';
-  if(e&&e.net)return m;
-  if(c==='42501'||/row-level security|permission denied/i.test(m))return m+' → 原因：サーバーの権限(RLS)が書き込みを拒否しています。sync_fix.sql を実行してください';
-  if(c==='42P01'||c==='PGRST205'||/could not find the table|relation .* does not exist/i.test(m))return m+' → 原因：テーブルがありません。sync_fix.sql を実行してください';
-  if(c==='PGRST204'||c==='42703'||/could not find the .* column|column .* does not exist/i.test(m))return m+' → 原因：テーブルの列が足りません。sync_fix.sql を実行してください';
-  if(c==='22P02'||/invalid input syntax/i.test(m))return m+' → 原因：id列の型が text ではありません（テーブルを作り直す必要があります）';
-  if(/invalid api key|no api key|jwt/i.test(m))return m+' → 原因：APIキーが無効です';
-  return m};
+let cloud='未接続',PR={};const hs={},TB=[['nn_episodes','eps'],['nn_rooms','rooms']];
+async function api(p,o={}){const r=await fetch(SB+'/rest/v1/'+p,{...o,headers:{apikey:KEY,'Content-Type':'application/json',...(o.headers||{})}});const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null}
+/* 同期エラーの原因を判別して表示（原因が分からない問題の再発防止） */
+function cerr(e){let m=String(e&&e.message||e),j=null;try{j=JSON.parse(m)}catch(_){}
+  const c=(j&&j.code)||'',d=String((j&&(j.message||j.hint))||m);console.error('[cloud]',e);let r;
+  if(c==='PGRST205'||c==='42P01'||/schema cache|does not exist|Could not find the table/i.test(d))r='テーブルが未作成です。supabase_setup.sql をSupabaseのSQL Editorで実行してください（'+(c||'404')+'）';
+  else if(c==='42501'||/row-level security|permission denied/i.test(d))r='権限(RLS)が不足しています。supabase_setup.sql を再実行してください（'+(c||'403')+'）';
+  else if(/Invalid API key|JWT|apikey/i.test(d))r='APIキーが無効です。Supabaseの Publishable key を確認してください';
+  else if(e instanceof TypeError||/Failed to fetch|NetworkError|Load failed/i.test(m))r='Supabaseに接続できません（通信不良、またはプロジェクトが一時停止中の可能性）';
+  else r=d.slice(0,120);
+  r='エラー：'+r;if(cerr.l!==r){cerr.l=r;try{toast('☁️ '+r.slice(0,70))}catch(_){}}return r}
 const skip=x=>x.s||LIVES.includes(x.author)||(BS.includes(P.name)&&x.author===P.name);
-const syncBanner=p=>cloudErr?`<div${p?' style="padding:0 16px"':''}><div class=card style="padding:10px 12px;margin:8px 0;border:1px solid var(--red)" onclick="cloudDiag()"><b style="color:var(--red)">⚠️ クラウドに送れていません（他のアカウントには公開されません）</b><small style="word-break:break-all">${esc(cloudErr)}</small><small>タップで原因を診断</small></div></div>`:'';
-function setCloud(){const had=!!cloudErr;cloudErr=pushErr||pullErr;cloud=cloudErr?'⚠️ 同期エラー '+new Date().toLocaleTimeString():'同期済み '+new Date().toLocaleTimeString();
-  if(cloudErr&&warn.l!==cloudErr){warn.l=cloudErr;toast('⚠️ クラウドに送れていません。プロフィールの「クラウド同期」で原因を確認できます')}if(!cloudErr)warn.l='';
-  if(had!==!!cloudErr&&!lv&&!sheet&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))render()}
-function warn(){}
-/* 1回の送信：自分の行を先に・別リクエストで送る／失敗行は個別に再送して他の行を巻き込まない */
-async function sendRows(t,items){const ok=[],bad=[];
-  const post=a=>api(t+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(a.map(i=>i.row))});
-  for(let n=0;n<items.length;n+=20){const part=items.slice(n,n+20);
-    try{await post(part);ok.push(...part)}
-    catch(e){if(e.net){items.slice(n).forEach(i=>bad.push([i,e]));return{ok,bad}}
-      for(const i of part){try{await post([i]);ok.push(i)}catch(e2){bad.push([i,e2])}}}}
-  return{ok,bad}}
-async function pushOnce(){const errs=[];
-  for(const[t,k]of TB){const mine=[],oth=[],seen=new Set();
-    for(const x of D[k]){if(!x||!x.id||seen.has(x.id)||skip(x)||TOMB().includes(x.id))continue;seen.add(x.id);
-      const{u,...c}=x,j=JSON.stringify(c);if(hs[x.id]===j)continue;(x.author===P.name?mine:oth).push({x,j})}
-    for(const g of[mine,oth]){g.forEach(i=>{i.x.u=Date.now();i.row={id:i.x.id,author:i.x.author,data:i.x,updated_at:new Date().toISOString()}});
-      const r=await sendRows(t,g);r.ok.forEach(i=>{hs[i.x.id]=i.j});r.bad.forEach(([i,e])=>errs.push(t+'「'+String(i.x.title||i.x.id).slice(0,20)+'」：'+why(e)))}
-    /* 自分の行は、本当にサーバーに入ったか読み戻して確認する */
-    const chk=mine.filter(i=>hs[i.x.id]===i.j&&!VER.has(i.x.id)).map(i=>i.x.id);
-    for(let n=0;n<chk.length;n+=40){const ids=chk.slice(n,n+40);
-      try{const r=await api(t+'?select=id&id=in.('+encodeURIComponent(ids.map(i=>'"'+i+'"').join(','))+')'),got=new Set((r||[]).map(v=>v.id));
-        ids.forEach(i=>{if(got.has(i))VER.add(i);else{delete hs[i];errs.push(t+' '+i+'：書き込みは成功と返ったのに、サーバーから読み出せません（SELECT権限/RLSの不足）')}})}
-      catch(e){errs.push(t+' 読み戻し失敗：'+why(e))}}}
-  if(P.name&&P.name!=='未設定'){try{const d={bio:P.bio,following:fl(),sup:P.gt||0,tt:P.tt||'',pm:P.prem||0,del:TOMB().slice(-300)},j=JSON.stringify(d);
-    if(hs.pf!==j){await api('nn_profiles?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{id:P.name,data:d,updated_at:new Date().toISOString()}])});hs.pf=j}}
-    catch(e){errs.push('nn_profiles：'+why(e))}}
-  pushErr=errs.length?errs[0]+(errs.length>1?'（ほか'+(errs.length-1)+'件）':''):'';setCloud()}
-let pushing=null,pushAgain=false;
-function cloudPush(){if(pushing){pushAgain=true;return pushing}
-  pushing=(async()=>{try{do{pushAgain=false;await pushOnce()}while(pushAgain)}catch(e){pushErr=why(e);setCloud()}finally{pushing=null}})();return pushing}
-/* 投稿直後：即送信→読み戻し確認→結果を必ず利用者に伝える */
-async function publishCheck(id){await cloudPush();const e=D.eps.find(x=>x.id===id);if(!e)return;
-  const{u,...c}=e,okk=hs[id]===JSON.stringify(c)&&VER.has(id);
-  const prv=!e.pub?'非公開設定':e.fol?'フォロワー限定':(e.at&&e.at>Date.now())?'予約投稿（'+new Date(e.at).toLocaleString()+'に公開）':'';
-  if(okk){toast(prv?'☁️ 保存しました（'+prv+'のため、他の人にはまだ表示されません）':'☁️ 公開しました。他のアカウントにも30秒以内に表示されます');return}
-  sheet={t:'⚠️ クラウドに公開できませんでした',h:`<div class=pad><div class=card style="padding:14px"><b style="color:var(--red)">この端末には保存されましたが、サーバーへ送れていません。他のアカウントには表示されません。</b><p style="word-break:break-all">${esc(pushErr||cloudErr||'原因不明')}</p></div><button class="btn w" onclick="cloudDiag()">🩺 原因を診断する</button><button class="btn o w" onclick="cloudPull().then(cloudPush).then(()=>{sheet=null;render()})">もう一度送信する</button></div>`};render()}
-/* 同期診断：読み取り／書き込み／読み戻し／上書き／削除を実際に試して、失敗した段階とサーバーの実エラーを表示 */
-async function cloudDiag(){sheet={t:'🩺 同期診断',h:'<div class=pad><div class=empty>診断中…</div></div>'};render();
-  const out=[],iso=()=>new Date().toISOString(),tid='~diag-'+DEV;
-  const step=async(n,f)=>{try{out.push(['✅',n,await f()||''])}catch(e){out.push(['❌',n,why(e)])}};
-  for(const t of['nn_episodes','nn_rooms','nn_profiles']){
-    const row=()=>t==='nn_profiles'?{id:tid,data:{d:1},updated_at:iso()}:{id:tid,author:'~diag',data:{id:tid,s:1,author:'~diag'},updated_at:iso()};
-    const up=async()=>{await api(t+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([row()])});return'OK'};
-    await step(t+'：読み取り',async()=>{await api(t+'?select=id&limit=1');return'OK'});
-    await step(t+'：書き込み（新規）',up);
-    await step(t+'：読み戻し（他の端末から見えるか）',async()=>{const r=await api(t+'?select=id&id=eq.'+encodeURIComponent(tid));if(!(r&&r.length))throw new Error('書いたのに読み出せません（SELECT権限/RLSの不足）');return'OK'});
-    await step(t+'：上書き（UPDATE）',up);
-    await step(t+'：削除（後片付け／作品削除機能に必要）',async()=>{if(!await cdel(t,tid))throw new Error('削除できませんでした（DELETE権限/RLSの不足）');return'OK'})}
-  const bad=out.filter(x=>x[0]==='❌');
-  sheet={t:'🩺 同期診断',h:`<div class=pad><div class=card style="padding:14px"><b style="color:${bad.length?'var(--red)':'var(--acd)'}">${bad.length?'❌ '+bad.length+'件の問題があります':'✅ サーバー側は正常です'}</b><small>${bad.length?'最初に失敗した段階が原因です。メッセージにある対処（sync_fix.sql の実行）を行ってください。':'投稿が公開されない場合は、投稿の公開設定（非公開・予約・フォロワー限定）を確認してください。'}</small></div></div><div class=card>${out.map(x=>`<div class=row style="cursor:default;display:block"><b>${x[0]} ${esc(x[1])}</b><small style="word-break:break-all">${esc(x[2])}</small></div>`).join('')}</div><button class="btn w" onclick="cloudDiag()">もう一度診断する</button><button class="btn o w" onclick="cloudPull().then(cloudPush).then(()=>{sheet=null;render()})">今すぐ同期</button>`};render()}
+async function cloudPush(){
+  try{for(const[t,k]of TB){const rows=[],done=[];
+    for(const x of D[k]){if(skip(x)||TOMB().includes(x.id))continue;const{u,...c}=x,j=JSON.stringify(c);if(hs[x.id]===j)continue;x.u=Date.now();rows.push({id:x.id,author:x.author,data:x,updated_at:new Date().toISOString()});done.push([x.id,j])}
+    if(rows.length){await api(t+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows)});done.forEach(([i,j])=>hs[i]=j)}}
+   if(P.name&&P.name!=='未設定'){const d={bio:P.bio,following:fl(),sup:P.gt||0,tt:P.tt||'',pm:P.prem||0,del:TOMB().slice(-300)},j=JSON.stringify(d);if(hs.pf!==j){await api('nn_profiles?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{id:P.name,data:d,updated_at:new Date().toISOString()}])});hs.pf=j}}
+   cloud='同期済み '+new Date().toLocaleTimeString()}catch(e){cloud=cerr(e)}}
 function mergeIn(l,r){const o=(r.u||0)>(l.u||0)?{...l,...r}:{...r,...l};
   for(const k of['likes','marks','subs','rd','pv0','pv1','pv2','pv3','vw'])if(l[k]||r[k])o[k]=[...(r[k]||[]).filter(v=>v!==P.name),...(l[k]||[]).filter(v=>v===P.name)];
   if(l.comments||r.comments){const m=new Map();[...(l.comments||[]),...(r.comments||[])].forEach(c=>m.set(c.a+c.d,c));o.comments=[...m.values()]}if(l.parts||r.parts){const m=new Map();[...(l.parts||[]),...(r.parts||[])].forEach(c=>m.set(c.a+c.d,c));o.parts=[...m.values()].sort((a,b)=>a.d-b.d);o.body=o.parts.map(x=>x.t).join('\n\n')}if(l.rx||r.rx){o.rx={};for(const x of new Set([...Object.keys(l.rx||{}),...Object.keys(r.rx||{})]))o.rx[x]=[...((r.rx||{})[x]||[]).filter(v=>v!==P.name),...((l.rx||{})[x]||[]).filter(v=>v===P.name)]}return o}
-async function cloudPull(){let ch=0;const errs=[];
-  for(const[t,k]of TB){try{const rows=(await api(t+'?select=data&order=updated_at.desc&limit=500'))||[];
-    for(const row of rows){const r=row&&row.data;if(!r||!r.id||r.s||String(r.id)[0]==='~')continue;
-      try{if(k==='eps'){r.likes=r.likes||[];r.marks=r.marks||[];r.comments=r.comments||[];r.tags=r.tags||[]}else r.subs=r.subs||[];
-        if(TOMB().includes(r.id)){if(!(P.dp2||[]).includes(r.id))(P.dp2=P.dp2||[]).push(r.id);continue}
-        const i=D[k].findIndex(x=>x.id===r.id);
-        if(i<0){D[k].push(r);ch++;const{u,...c}=r;hs[r.id]=JSON.stringify(c)}
-        else if(!skip(D[k][i])){const m=mergeIn(D[k][i],r);if(JSON.stringify(m)!==JSON.stringify(D[k][i])){D[k][i]=m;ch++}}}catch(e){}}}
-    catch(e){errs.push(t+' の読み取り：'+why(e))}}
-  try{((await api('nn_profiles?select=id,data&id=not.like.~*&limit=1000'))||[]).forEach(x=>PR[x.id]=x.data)}catch(e){errs.push('nn_profiles の読み取り：'+why(e))}
-  try{ch+=applyTombs();claimG();await purge()}catch(e){}
-  pullErr=errs.length?errs[0]:'';setCloud();
-  if(ch){save();if(!lv&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))render()}}
+async function cloudPull(){
+  try{let ch=0;for(const[t,k]of TB){const rows=await api(t+'?select=data&order=updated_at.desc&limit=500');
+    for(const{data:r}of rows){if(TOMB().includes(r.id)){if(!(P.dp2||[]).includes(r.id))(P.dp2=P.dp2||[]).push(r.id);continue}const i=D[k].findIndex(x=>x.id===r.id);
+      if(i<0){D[k].push(r);ch++;const{u,...c}=r;hs[r.id]=JSON.stringify(c)}
+      else if(!skip(D[k][i])){const m=mergeIn(D[k][i],r);if(JSON.stringify(m)!==JSON.stringify(D[k][i])){D[k][i]=m;ch++}}}}
+   (await api('nn_profiles?select=id,data&id=not.like.~*&limit=1000')).forEach(x=>PR[x.id]=x.data);ch+=applyTombs();claimG();await purge();
+   cloud='同期済み '+new Date().toLocaleTimeString();
+   if(ch){save();if(!lv&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))render()}}catch(e){cloud=cerr(e)}}
 const TOMB=()=>P.dl=P.dl||[];
 const cdel=async(t,id)=>{await api(t+'?id=eq.'+encodeURIComponent(id),{method:'DELETE',headers:{Prefer:'return=minimal'}});const r=await api(t+'?select=id&id=eq.'+encodeURIComponent(id));return !(r&&r.length)};
 /* サーバー抹消：削除済みIDを記録し、失敗したら次回同期で再試行。他端末の復活も防ぐ */
@@ -300,7 +241,7 @@ function homeL(){
    +`<h3>🌟 TOPクリエイター</h3><div class=strip>${au.slice(0,20).map(crCard).join('')||none}</div>`
    +`<h3>💡 おすすめのクリエイター</h3><div class=strip>${rec.map(crCard).join('')||none}</div>`+cds('🤝 リレー小説（参加募集中）',all.filter(e=>e.rl&&(e.parts||[]).length<20).slice(0,10))+events()+weekly()+missionCard();
 }
-function home(){return `<div class=pad>${syncBanner()}<input id=sq placeholder="🔍 作品・作者・タグ・Roomを検索" readonly onclick="setTab(1)" style="cursor:pointer"><div class=hero><div class=logo>小説note</div><i style="right:6%;top:0;font-size:26px;color:#ffb300">★</i><i style="right:24%;top:30px;color:#ff4fa3;animation-delay:-1s">✦</i><i style="left:58%;top:-4px;color:#2f6bff;animation-delay:-2s">●</i><i style="right:0;top:48px;color:#11c27a;animation-delay:-3s">▲</i></div>${prem()?'':adBar()}${homeX()}${liveSec()}<div id=hl style="margin:0 -16px">${homeL()}</div></div>`}
+function home(){return `<div class=pad><input id=sq placeholder="🔍 作品・作者・タグ・Roomを検索" readonly onclick="setTab(1)" style="cursor:pointer"><div class=hero><div class=logo>小説note</div><i style="right:6%;top:0;font-size:26px;color:#ffb300">★</i><i style="right:24%;top:30px;color:#ff4fa3;animation-delay:-1s">✦</i><i style="left:58%;top:-4px;color:#2f6bff;animation-delay:-2s">●</i><i style="right:0;top:48px;color:#11c27a;animation-delay:-3s">▲</i></div>${prem()?'':adBar()}${homeX()}${liveSec()}<div id=hl style="margin:0 -16px">${homeL()}</div></div>`}
 
 function ranking(){
   const e=D.eps.filter(vis),t=byLikes(e).slice(0,40);
@@ -338,7 +279,7 @@ function roomForm(){const f=Fm.r;return `<div class=card><input placeholder="Roo
   <button id=rb class="btn w" ${f.title?'':'disabled'} onclick="mkRoom()">Roomを開設</button>`}
 function mkRoom(){const f=Fm.r;D.rooms.push({id:uid(),title:f.title,desc:f.desc,author:P.name,img:f.img,subs:[],date:Date.now()});Fm.r={title:'',desc:'',img:''};save();tab=0;toast('Roomを開設しました');render(1)}
 function liveForm(){return `<div class=card><input placeholder="配信タイトル" value="${esc(Fm.l.title)}" oninput="Fm.l.title=this.value;$('#lb').disabled=!this.value"></div><button id=lb class="btn w" ${Fm.l.title?'':'disabled'} onclick="startLive('${q(P.name)}')">ライブ開始</button>`}
-function post(){return `<h1 class=lt>新規作成</h1>${syncBanner(1)}${seg(['作品','Room','ライブ','リレー'],mode,'setMode')}${mode==0?pomoH():''}${[ed('n'),roomForm(),liveForm(),relayForm()][mode]}`}
+function post(){return `<h1 class=lt>新規作成</h1>${seg(['作品','Room','ライブ','リレー'],mode,'setMode')}${mode==0?pomoH():''}${[ed('n'),roomForm(),liveForm(),relayForm()][mode]}`}
 const setMode=i=>{mode=i;render()};
 
 function reader(id){
@@ -417,7 +358,7 @@ function profile(){
   <div style="display:flex;margin-top:12px"><div class=grow onclick="openSheet('フォロー中')" style="cursor:pointer"><b>${fl().length}</b><small>フォロー中</small></div><div class=grow onclick="openSheet('フォロワー')" style="cursor:pointer"><b>${fol(P.name)}</b><small>フォロワー</small></div></div></div>`
   +sec('通知カスタム',nt.map(([k,t])=>`<label class=tg>${t}<input type=checkbox ${n[k]?'checked':''} onchange="P.n.${k}=this.checked;save()"></label>`).join(''))
   +sec('📊 執筆記録',stats())+sec('🗓 読む・書くカレンダー',heat())+sec('🛒 ポイントショップ（'+(P.pt||0)+'pt）',shopH())
-  +extra()+storeSec()+revSec()+anSec()+giftSec()+chalSec()+modSec()+sec('☁️ クラウド同期',`<div class=empty>状態：${esc(cloud)}${cloudErr?`<br><b style="color:var(--red);word-break:break-all">${esc(cloudErr)}</b>`:''}</div><div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px"><button class="btn o" onclick="cloudPull().then(cloudPush).then(()=>render())">今すぐ同期</button><button class="btn o" onclick="cloudDiag()">🩺 同期診断</button><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="cloudWipe()">自分のクラウド投稿を削除</button></div>`)
+  +extra()+storeSec()+revSec()+anSec()+giftSec()+chalSec()+modSec()+sec('☁️ クラウド同期',`<div class=empty>状態：${esc(cloud)}</div><div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px"><button class="btn o" onclick="cloudPull().then(cloudPush).then(()=>render())">今すぐ同期</button><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="cloudWipe()">自分のクラウド投稿を削除</button></div>`)
   +sec('💾 バックアップ',`<div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px"><button class="btn o" onclick="bkExp()">書き出し(JSON)</button><label class="btn o">読み込み<input type=file accept=".json" hidden onchange="bkImp(this.files[0])"></label><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="wipeLocal()">この端末を初期化</button></div>`);
 }
 const openSheet=t=>{sheet={t,u:t==='フォロー中'?fl():[]};render()};
@@ -685,7 +626,7 @@ function strike(r,t,kind){const n=Date.now(),a=P.st=[...(P.st||[]).filter(x=>n-x
   api('nn_modlog',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({id:uid(),author:P.name,kind,reason:r.reason,excerpt:t.slice(0,200),device:DEV})}).catch(()=>{});
   sheet={t:'⚠️ 投稿できませんでした',h:`<div class=pad><div class=card style="padding:14px"><b style="color:var(--red)">${esc(r.reason)}</b><p>下ネタ・政治に関する内容は投稿できません。記号や空白で区切った表記も判定されます。修正して再投稿してください。</p><small>警告 ${a.length}/3（24時間以内）。3回で1時間、5回で24時間の投稿制限になります。</small></div><button class="btn o w" onclick="apOpen('ai')">誤判定として異議申し立て</button></div>`};render()}
 const _se=submitEp,_sc=sendC,_ap=addPart,_mr=mkRoom,_ml=mkRelay;
-submitEp=async k=>{const f=Fm[k];if(!await guard('post',[f.title,f.desc,f.tags,f.body].join('\n')))return;const cw=f.cw||0,cr=f.cr||0,ex=f.ex||0,id=f.id;_se(k);const e=k==='e'?D.eps.find(x=>x.id===id):D.eps[D.eps.length-1];if(e){e.cw=cw;e.cr=cr;if(ex)e.ex=Date.now()+[0,864e5,6048e5][ex];e.u=Date.now();save();await publishCheck(e.id)}};
+submitEp=async k=>{const f=Fm[k];if(!await guard('post',[f.title,f.desc,f.tags,f.body].join('\n')))return;const cw=f.cw||0,cr=f.cr||0,ex=f.ex||0,id=f.id;_se(k);const e=k==='e'?D.eps.find(x=>x.id===id):D.eps[D.eps.length-1];if(e){e.cw=cw;e.cr=cr;if(ex)e.ex=Date.now()+[0,864e5,6048e5][ex];e.u=Date.now();save()}};
 sendC=async id=>{const e=D.eps.find(x=>x.id===id),t=($('#ci')||{}).value||'',cr=e.cr||0;
   if(cr==2&&e.author!==P.name)return toast('この作品はコメントを受け付けていません');
   if(cr==1&&e.author!==P.name&&!((PR[e.author]||{}).following||[]).includes(P.name))return toast('作者がフォローしている人のみコメントできます');
@@ -824,7 +765,7 @@ const supB=n=>{const t=n===P.name?P.gt||0:(PR[n]||{}).sup||0,s=SUP.find(x=>t>=x[
 /* ---------- 6分以上画面を開いていなかったら自動リロード ---------- */
 if(P.cn){P.pt=(P.pt||0)+P.cn*5;P.cn=0;save()} // 旧コインはポイントに換算（1コイン=5pt）
 let HID_AT=0;
-document.addEventListener('visibilitychange',()=>{if(document.hidden){HID_AT=Date.now();try{save()}catch(e){}try{cloudPush()}catch(e){}}else{const t=HID_AT;HID_AT=0;if(t&&Date.now()-t>=36e4){try{sessionStorage.setItem('nn_rl','1')}catch(e){}location.reload()}}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){HID_AT=Date.now();try{save()}catch(e){}}else{const t=HID_AT;HID_AT=0;if(t&&Date.now()-t>=36e4){try{sessionStorage.setItem('nn_rl','1')}catch(e){}location.reload()}}});
 try{if(sessionStorage.getItem('nn_rl')){sessionStorage.removeItem('nn_rl');setTimeout(()=>toast('🔄 しばらく開いていなかったので最新の状態に更新しました'),800)}}catch(e){}
 
 /* ---------- navigation ---------- */
@@ -841,7 +782,7 @@ function render(top){if(top&&window.speechSynthesis)speechSynthesis.cancel();
   if(lv)renderLive();
   scrollTo(0,top?0:y);if(top&&t&&t.t==='ep')resume(t.a);if(top&&!t&&tab==1&&!SR.q){const i=$('#sqi');if(i)i.focus()}
 }
-if(!P.sn)snap();applyTheme();applyDk();render();modInit();cloudPull().then(cloudPush);setInterval(()=>cloudPull().then(cloudPush),30000);addEventListener('pagehide',()=>{try{cloudPush()}catch(e){}});addEventListener('online',()=>cloudPull().then(cloudPush));
+if(!P.sn)snap();applyTheme();applyDk();render();modInit();cloudPull().then(cloudPush);setInterval(cloudPull,30000);
 </script>
 </body>
 </html>
