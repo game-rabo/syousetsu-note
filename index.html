@@ -114,7 +114,7 @@ nav button span{position:relative;display:block}.nd{position:absolute;top:0;righ
 mark{background:#ffe066;color:#111;border-radius:3px;padding:0 1px}#pgb{position:fixed;top:0;left:0;height:3px;width:0;background:linear-gradient(90deg,var(--c1),var(--c2),var(--c4));z-index:50;transition:width .15s}
 nav button:nth-child(6).on{color:var(--c1)}nav button{font-size:9.5px}
 :root[data-th=light]{--bg:#f2f2f7;--card:#fff;--fg:#111;--sub:#6b6b73;--line:#e3e3e8;--acd:#3f7d00}:root[data-th=dark]{--bg:#000;--card:#1c1c1e;--fg:#f5f5f7;--sub:#9a9aa2;--line:#2c2c2e;--acd:#a6f21a}.body.mj{font-family:"Hiragino Mincho ProN","Yu Mincho","Noto Serif JP",serif}
-</style>
+.live .lvt{max-height:210px;overflow:auto}</style>
 </head>
 <body>
 <div class="deco"><i style="left:6%;top:12%;width:70px;height:70px;border-radius:50%;background:var(--ac)"></i><i style="right:8%;top:30%;width:60px;height:60px;border:9px solid #2f6bff;border-radius:50%"></i><i style="left:12%;top:62%;width:70px;height:70px;background:#ff4fd8;clip-path:polygon(50% 0,100% 100%,0 100%)"></i><i style="right:10%;top:72%;width:64px;height:64px;background:#ffb300;clip-path:polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)"></i><i style="left:44%;top:88%;width:40px;height:40px;background:#8a3ffc;transform:rotate(45deg)"></i></div>
@@ -139,15 +139,15 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 const SB='https://mzykelberuojpgyieiqv.supabase.co',KEY='sb_publishable_DgxzZQeKj0tz4EELPlNFeg_TH1CcuQD';
 let cloud='未接続',PR={};const hs={},TB=[['nn_episodes','eps'],['nn_rooms','rooms']];
 async function api(p,o={}){const r=await fetch(SB+'/rest/v1/'+p,{...o,headers:{apikey:KEY,'Content-Type':'application/json',...(o.headers||{})}});const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null}
-const skip=x=>x.s||LIVES.includes(x.author);
+const skip=x=>x.s||LIVES.includes(x.author)||(BS.includes(P.name)&&x.author===P.name);
 async function cloudPush(){
   try{for(const[t,k]of TB){const rows=[],done=[];
     for(const x of D[k]){if(skip(x))continue;const{u,...c}=x,j=JSON.stringify(c);if(hs[x.id]===j)continue;x.u=Date.now();rows.push({id:x.id,author:x.author,data:x,updated_at:new Date().toISOString()});done.push([x.id,j])}
     if(rows.length){await api(t+'?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows)});done.forEach(([i,j])=>hs[i]=j)}}
-   if(P.name&&P.name!=='未設定'){const d={bio:P.bio,following:fl()},j=JSON.stringify(d);if(hs.pf!==j){await api('nn_profiles?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{id:P.name,data:d,updated_at:new Date().toISOString()}])});hs.pf=j}}
+   if(P.name&&P.name!=='未設定'){const d={bio:P.bio,following:fl(),sup:P.gt||0,tt:P.tt||'',pm:P.prem||0},j=JSON.stringify(d);if(hs.pf!==j){await api('nn_profiles?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify([{id:P.name,data:d,updated_at:new Date().toISOString()}])});hs.pf=j}}
    cloud='同期済み '+new Date().toLocaleTimeString()}catch(e){cloud='エラー（supabase_reset.sql を実行しましたか？）'}}
 function mergeIn(l,r){const o=(r.u||0)>(l.u||0)?{...l,...r}:{...r,...l};
-  for(const k of['likes','marks','subs','rd'])if(l[k]||r[k])o[k]=[...(r[k]||[]).filter(v=>v!==P.name),...(l[k]||[]).filter(v=>v===P.name)];
+  for(const k of['likes','marks','subs','rd','pv0','pv1','pv2','pv3','vw'])if(l[k]||r[k])o[k]=[...(r[k]||[]).filter(v=>v!==P.name),...(l[k]||[]).filter(v=>v===P.name)];
   if(l.comments||r.comments){const m=new Map();[...(l.comments||[]),...(r.comments||[])].forEach(c=>m.set(c.a+c.d,c));o.comments=[...m.values()]}if(l.parts||r.parts){const m=new Map();[...(l.parts||[]),...(r.parts||[])].forEach(c=>m.set(c.a+c.d,c));o.parts=[...m.values()].sort((a,b)=>a.d-b.d);o.body=o.parts.map(x=>x.t).join('\n\n')}if(l.rx||r.rx){o.rx={};for(const x of new Set([...Object.keys(l.rx||{}),...Object.keys(r.rx||{})]))o.rx[x]=[...((r.rx||{})[x]||[]).filter(v=>v!==P.name),...((l.rx||{})[x]||[]).filter(v=>v===P.name)]}return o}
 async function cloudPull(){
   try{let ch=0;for(const[t,k]of TB){const rows=await api(t+'?select=data&order=updated_at.desc&limit=500');
@@ -166,7 +166,7 @@ const newEp=()=>({title:'',desc:'',tags:'',room:'',body:'',pub:true,fol:false,im
 const Fm={n:newEp(),e:{},r:{title:'',desc:'',img:''},l:{title:''},rl:{title:'',desc:'',text:''}};
 let cur='n';Object.assign(Fm.n,L('nn_draft',{}));
 const fl=()=>P.following.split(',').filter(Boolean);
-const vis=e=>((e.pub&&(!e.at||e.at<=Date.now()))&&!(P.mu||[]).includes(e.author))||e.author===P.name;
+const vis=e=>modOk(e)&&((e.pub&&(!e.at||e.at<=Date.now()))&&!(P.mu||[]).includes(e.author))||e.author===P.name;
 const rm=id=>D.rooms.find(r=>r.id===id);
 const byLikes=a=>[...a].sort((x,y)=>y.likes.length-x.likes.length);
 
@@ -176,7 +176,7 @@ function readImg(file,max,cb){
   fr.readAsDataURL(file);
 }
 function av(n,s=60,r='50%'){
-  const st=`width:${s}px;height:${s}px;border-radius:${r};font-size:${s/2.5}px${n===P.name&&P.fr?';box-shadow:'+((SH.find(x=>x[0]===P.fr)||[])[3]||'none'):''}`;
+  const st=`width:${s}px;height:${s}px;border-radius:${r};font-size:${s/2.5}px${n===P.name&&P.fr?';box-shadow:'+((SHA().find(x=>x[0]===P.fr)||[])[3]||'none'):''}`;
   return n===P.name&&P.img?`<img class=av style="${st}" src="${P.img}">`:`<span class=av style="${st}">${esc(String(n).slice(0,1))}</span>`;
 }
 const epRow=e=>`<div class=row onclick="go('ep','${e.id}')">${cov(e,48,64)}<div class=grow><b>${esc(e.title)}</b><small>${esc(e.author)}・${ago(e.date)}</small></div>${e.fol?'🔒':''}<small>❤️ ${e.likes.length}</small></div>`;
@@ -186,7 +186,7 @@ const sec=(t,b)=>`<h3>${t}</h3><div class=card>${b}</div>`;
 const seg=(o,c,f)=>`<div class=seg>${o.map((x,i)=>`<button class="${i==c?'on':''}" onclick="${f}(${i})">${x}</button>`).join('')}</div>`;
 
 /* ---------- screens ---------- */
-function homeX(){const l=D.eps.find(e=>e.id===P.last&&vis(e));return `<div style="display:flex;gap:8px;margin:0 0 8px">${l?`<button class="btn o grow" onclick="go('ep','${l.id}')">▶ 続きから：${esc(l.title.slice(0,10))}</button>`:''}<button class="btn grow" onclick="randEp()">🎲 おまかせで一冊</button><button class="btn o" onclick="omikuji()">🎴 おみくじ</button></div>`}
+function homeX(){const l=D.eps.find(e=>e.id===P.last&&vis(e));return `<div style="display:flex;gap:8px;margin:0 0 8px">${l?`<button class="btn o grow" onclick="go('ep','${l.id}')">▶ 続きから：${esc(l.title.slice(0,10))}</button>`:''}<button class="btn grow" onclick="randEp()">🎲 おまかせで一冊</button><button class="btn o" onclick="omikuji()">🎴 おみくじ</button><button class="btn o" onclick="go('store','x')">💎 ストア</button></div>`}
 function randEp(){const p=D.eps.filter(e=>vis(e)&&(!e.fol||fl().includes(e.author)||e.author===P.name));if(!p.length)return toast('読める作品がありません');go('ep',p[Math.floor(Math.random()*p.length)].id)}
 const hue=s=>[...String(s)].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7);
 function cov(x,w,h){const r=Math.max(6,w/8);return x.img?`<img src="${x.img}" style="width:${w}px;height:${h}px;border-radius:${r}px;object-fit:cover;display:block;flex:none">`:`<div style="width:${w}px;height:${h}px;border-radius:${r}px;flex:none;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:${w/2.4}px;background:linear-gradient(135deg,hsl(${hue(x.id)},70%,55%),hsl(${(hue(x.id)+50)%360},70%,38%))">${esc(String(x.title).slice(0,1))}</div>`}
@@ -211,7 +211,7 @@ function homeL(){
   const newest=[...all].sort((a,b)=>b.date-a.date),lk={};
   D.eps.filter(vis).forEach(e=>lk[e.author]=(lk[e.author]||0)+e.likes.length);
   const au=Object.keys(lk).filter(a=>a!=='運営').sort((a,b)=>lk[b]-lk[a]),rec=au.filter(a=>a!==P.name&&!f.includes(a)).slice(0,10),none='<div class=empty>対象がありません</div>';
-  return shelf()+cds('📈 人気急上昇の作品',[...all].sort((a,b)=>b.likes.length/age(b)-a.likes.length/age(a)).slice(0,10))
+  return shelf()+cds('🚀 ブースト中の作品',all.filter(e=>e.bst>Date.now()).slice(0,10))+cds('📈 人気急上昇の作品',[...all].sort((a,b)=>b.likes.length/age(b)-a.likes.length/age(a)).slice(0,10))
    +cds('👥 フォロー中の作品',newest.filter(e=>f.includes(e.author)).slice(0,10))
    +cds('🆕 最新の作品',newest.slice(0,20))
    +cds('🔥 人気急上昇のroom',[...rooms].sort((a,b)=>b.subs.length/age(b)-a.subs.length/age(a)).slice(0,10),1)
@@ -219,7 +219,7 @@ function homeL(){
    +`<h3>🌟 TOPクリエイター</h3><div class=strip>${au.slice(0,20).map(crCard).join('')||none}</div>`
    +`<h3>💡 おすすめのクリエイター</h3><div class=strip>${rec.map(crCard).join('')||none}</div>`+cds('🤝 リレー小説（参加募集中）',all.filter(e=>e.rl&&(e.parts||[]).length<20).slice(0,10))+events()+weekly()+missionCard();
 }
-function home(){return `<div class=pad><input id=sq placeholder="🔍 作品・作者・タグ・Roomを検索" readonly onclick="setTab(1)" style="cursor:pointer"><div class=hero><div class=logo>小説note</div><i style="right:6%;top:0;font-size:26px;color:#ffb300">★</i><i style="right:24%;top:30px;color:#ff4fa3;animation-delay:-1s">✦</i><i style="left:58%;top:-4px;color:#2f6bff;animation-delay:-2s">●</i><i style="right:0;top:48px;color:#11c27a;animation-delay:-3s">▲</i></div>${adBar()}${homeX()}${liveSec()}<div id=hl style="margin:0 -16px">${homeL()}</div></div>`}
+function home(){return `<div class=pad><input id=sq placeholder="🔍 作品・作者・タグ・Roomを検索" readonly onclick="setTab(1)" style="cursor:pointer"><div class=hero><div class=logo>小説note</div><i style="right:6%;top:0;font-size:26px;color:#ffb300">★</i><i style="right:24%;top:30px;color:#ff4fa3;animation-delay:-1s">✦</i><i style="left:58%;top:-4px;color:#2f6bff;animation-delay:-2s">●</i><i style="right:0;top:48px;color:#11c27a;animation-delay:-3s">▲</i></div>${prem()?'':adBar()}${homeX()}${liveSec()}<div id=hl style="margin:0 -16px">${homeL()}</div></div>`}
 
 function ranking(){
   const e=D.eps.filter(vis),t=byLikes(e).slice(0,40);
@@ -237,6 +237,8 @@ function ed(k){
   <input placeholder="タグ(カンマ区切り)" value="${esc(f.tags)}" oninput="Fm.${k}.tags=this.value;chk()">
   <select onchange="Fm.${k}.room=this.value;chk()"><option value="">単作 (Roomなし)</option>${D.rooms.filter(r=>r.author===P.name).map(r=>`<option value="${r.id}" ${f.room===r.id?'selected':''}>${esc(r.title)}</option>`).join('')}</select>
   <label class=row style="display:block">${f.img?`<img src="${f.img}" style="width:70px;height:94px;object-fit:cover;border-radius:8px">`:'🖼 表紙を選択（なしなら自動生成）'}<input type=file accept="image/*" hidden onchange="readImg(this.files[0],400,d=>{Fm.${k}.img=d;render()})"></label><textarea placeholder="本文" oninput="Fm.${k}.body=this.value;chk();$('#cc').textContent=ccT(this.value.length)">${esc(f.body)}</textarea><small id=cc style="padding:0 14px 8px">${ccT(f.body.length)}</small><div class=tb style="padding:0 14px"><button onclick="lint()">🔍 推敲チェック</button><button onclick="cmOpen()">🎨 表紙メーカー</button>${k==='n'?'<button onclick="dSave()">💾 下書き保存</button><button onclick="dOpen()">📂 下書き箱</button>':''}</div>
+  <label class=tg>⏳ 公開期間<select style="width:auto" onchange="Fm.${k}.ex=+this.value">${['無期限（変更なし）','24時間で非公開','7日で非公開'].map((x,i)=>`<option value=${i} ${(f.ex||0)==i?'selected':''}>${x}</option>`).join('')}</select></label>
+  <label class=tg>⚠️ コンテンツ警告<select style="width:auto" onchange="Fm.${k}.cw=+this.value">${['なし','R-15（性的示唆）','暴力・流血','ネタバレ'].map((x,i)=>`<option value=${i} ${(f.cw||0)==i?'selected':''}>${x}</option>`).join('')}</select></label><label class=tg>💬 コメント<select style="width:auto" onchange="Fm.${k}.cr=+this.value">${['全員','作者がフォロー中の人のみ','受け付けない'].map((x,i)=>`<option value=${i} ${(f.cr||0)==i?'selected':''}>${x}</option>`).join('')}</select></label>
   <label class=tg>予約投稿<input type=datetime-local style="width:auto" value="${f.at?new Date(f.at-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,16):''}" onchange="Fm.${k}.at=this.value?new Date(this.value).getTime():0"></label><label class=tg>パブリック（非公開オフ）<input type=checkbox ${f.pub?'checked':''} onchange="Fm.${k}.pub=this.checked;chk()"></label>
   <label class=tg style="border:0">フォロワー限定<input type=checkbox ${f.fol?'checked':''} onchange="Fm.${k}.fol=this.checked;chk()"></label></div>
   <button id=sb class="btn w" ${ok?'':'disabled'} onclick="submitEp('${k}')">${edit?'更新する':'投稿する'}</button>
@@ -261,7 +263,7 @@ const setMode=i=>{mode=i;render()};
 function reader(id){
   const e=D.eps.find(x=>x.id===id);if(!e)return '<div class=empty>作品が見つかりません</div>';
   const me=P.name,isF=fl().includes(e.author)||e.author===me,R=P.r,nc=e.body.length;
-  if(e.fol&&!isF)return `<div class=lock><div style="font-size:40px">🔒</div><h3 style="margin:8px 0 16px">フォロワー限定作品</h3><button class=btn onclick="go('author','${q(e.author)}')">作者プロフィールへ</button></div>`;
+  if(e.cw&&!CWOK[e.id]&&e.author!==me)return cwGate(e);if(e.fol&&!isF)return `<div class=lock><div style="font-size:40px">🔒</div><h3 style="margin:8px 0 16px">フォロワー限定作品</h3><button class=btn onclick="go('author','${q(e.author)}')">作者プロフィールへ</button></div>`;
   const liked=e.likes.includes(me),bm=e.marks.includes(me),last=e.comments.length&&e.comments[e.comments.length-1].a===me;
   return `<div id=pgb></div><div class=pad><div style="display:flex;justify-content:center;margin-bottom:10px">${cov(e,120,160)}</div><div style="display:flex;align-items:center;gap:8px"><h1 style="margin:0;flex:1;font-size:28px">${esc(e.title)}</h1>${e.author===me?`<button class=del title="編集" onclick="editEp('${e.id}')">✏️</button>`:''}</div>
   <a style="color:var(--acd);font-weight:700;cursor:pointer" onclick="go('author','${q(e.author)}')">作者: ${esc(e.author)} (タップでフォロー)</a>
@@ -270,11 +272,11 @@ function reader(id){
   <small style="margin-top:8px">${ago(e.date)}・${nc}字・約${Math.max(1,Math.round(nc/500))}分で読めます・👀 ${(e.rd||[]).length}人が閲覧</small>
   <div class=tb><button onclick="rs('fs',-1)">A−</button><button onclick="rs('fs',1)">A＋</button><button onclick="rs('th')">${['☀️ ライト','📜 セピア','🌙 ダーク'][R.th]}</button><button onclick="rs('ff')">${R.ff?'🔤 明朝':'🔤 ゴシック'}</button><button style="${R.vert?'background:var(--ac);color:#111':''}" onclick="rs('vert')">縦書き</button><button onclick="speak('${e.id}')">🔊 読み上げ</button><button onclick="copyEp('${e.id}')">📋 コピー</button><button onclick="dlEp('${e.id}')">⬇ .txt</button><button onclick="quoteCard('${e.id}')">🖼 名言カード</button><button onclick="hlSave('${e.id}')" onmousedown="event.preventDefault()">🖍 ハイライト</button><button onclick="emoG('${e.id}')">📈 感情グラフ</button><button onclick="bgm()">${['🎵 BGM','🌧 雨','🌊 波','🔥 焚き火','🌬 風'][BGk]}</button><button onclick="sleepT()">${SLP?'😴 ON':'😴 30分'}</button></div>
   <div class="body ${['','sepia','dk'][R.th]} ${R.vert?'vert':''} ${R.ff?'mj':''}" style="font-size:${R.fs}px">${hlBody(e)}</div>
-  ${e.rl?relayH(e):''}${rnav(e)}<div class=acts><button style="color:${liked?'#ff2d78':''}" onclick="like('${e.id}')">${liked?'♥':'♡'} ${e.likes.length}</button><button style="color:${bm?'#2f6bff':''}" onclick="mark('${e.id}')">${bm?'🔖':'📑'}</button><button style="color:${(P.lt||[]).includes(e.id)?'#e08a00':''}" onclick="later('${e.id}')">${(P.lt||[]).includes(e.id)?'📌 あとで':'📍 あとで読む'}</button><button style="color:${(P.dn||{})[e.id]?'#11a35a':''}" onclick="done('${e.id}')">${(P.dn||{})[e.id]?'✅ 読了':'☑ 読了'}</button></div>
+  ${pollH(e)}${e.rl?relayH(e):''}${rnav(e)}<div class=acts><button style="color:${liked?'#ff2d78':''}" onclick="like('${e.id}')">${liked?'♥':'♡'} ${e.likes.length}</button><button style="color:${bm?'#2f6bff':''}" onclick="mark('${e.id}')">${bm?'🔖':'📑'}</button><button style="color:${(P.lt||[]).includes(e.id)?'#e08a00':''}" onclick="later('${e.id}')">${(P.lt||[]).includes(e.id)?'📌 あとで':'📍 あとで読む'}</button><button style="color:${(P.dn||{})[e.id]?'#11a35a':''}" onclick="done('${e.id}')">${(P.dn||{})[e.id]?'✅ 読了':'☑ 読了'}</button>${e.author!==me?`<button onclick="rpOpen('ep','${e.id}')">🚩 通報</button><button style="color:#e08a00" onclick="giftOpen('${e.id}')">🎁 投げ銭</button>`:`<button onclick="insOpen('${e.id}')">📊 インサイト</button>`}</div>
   <div class=tb>${RXE.map(x=>`<button style="${((e.rx||{})[x]||[]).includes(me)?'background:var(--ac);color:#111':''}" onclick="react('${e.id}','${x}')">${x} ${((e.rx||{})[x]||[]).length}</button>`).join('')}</div>${simil(e)}<h3 style="margin:0 0 8px">感想</h3>
   <div style="display:flex;gap:8px"><input id=ci placeholder="コメント..." oninput="$('#cs').disabled=!this.value||${!!last}"><button id=cs class=btn disabled onclick="sendC('${e.id}')">送信</button></div>
   ${last?'<small style="color:var(--red)">連続でコメントはできません</small>':''}
-  ${e.comments.filter(c=>!(P.mu||[]).includes(c.a)).sort((a,b)=>b.d-a.d).map(c=>`<div class=cm><small><b>${esc(c.a)}</b>・${ago(c.d)} ${c.a!==me?`<a style="color:var(--acd);cursor:pointer" onclick="reply('${q(c.a)}')">↩ 返信</a>`:''}</small>${mention(c.t)}</div>`).join('')}</div>`;
+  ${e.comments.filter(c=>!(P.mu||[]).includes(c.a)&&cOk(c,e)).sort((a,b)=>b.d-a.d).map(c=>`<div class=cm><small><b>${esc(c.a)}</b>${supB(c.a)}・${ago(c.d)} ${c.a!==me?`<a style="color:var(--acd);cursor:pointer" onclick="reply('${q(c.a)}')">↩ 返信</a>`:''} ${c.a!==me?`<a style="color:var(--sub);cursor:pointer" onclick="rpOpen('cm','${q(e.id+'|'+c.d)}')">🚩</a>`:''} ${(c.a===me||e.author===me)?`<a style="color:var(--sub);cursor:pointer" onclick="cDel('${e.id}',${c.d})">🗑</a>`:''}</small>${mention(c.t)}</div>`).join('')}</div>`;
 }
 function rs(k,d){const r=P.r;if(k==='fs')r.fs=Math.min(30,Math.max(12,r.fs+d));else if(k==='th')r.th=(r.th+1)%3;else if(k==='ff')r.ff=1-(r.ff||0);else r.vert=1-r.vert;save();render()}
 function speak(id){const s=window.speechSynthesis;if(!s)return toast('この端末は読み上げ非対応です');if(s.speaking){s.cancel();return}const e=D.eps.find(x=>x.id===id),u=new SpeechSynthesisUtterance(e.title+'。'+e.body);u.lang='ja-JP';s.speak(u);toast('読み上げ中（もう一度押すと停止）')}
@@ -293,13 +295,13 @@ function stats(){const mine=D.eps.filter(e=>e.author===P.name),days=new Set(mine
 function like(id){const e=D.eps.find(x=>x.id===id),i=e.likes.indexOf(P.name);i<0?e.likes.push(P.name):e.likes.splice(i,1);if(i<0)mis('like');save();render()}
 function mark(id){const e=D.eps.find(x=>x.id===id),i=e.marks.indexOf(P.name);i<0?e.marks.push(P.name):e.marks.splice(i,1);save();render()}
 function sendC(id){const e=D.eps.find(x=>x.id===id),t=$('#ci').value.trim();if(!t||(e.comments.length&&e.comments[e.comments.length-1].a===P.name))return;e.comments.push({a:P.name,t,d:Date.now()});mis('comment');evCm();save();render()}
-function editEp(id){const e=D.eps.find(x=>x.id===id);Fm.e={id,title:e.title,desc:e.desc,tags:e.tags.join(','),room:e.room,body:e.body,pub:e.pub,fol:e.fol,img:e.img||'',at:e.at||0};go('edit',id)}
+function editEp(id){const e=D.eps.find(x=>x.id===id);Fm.e={cw:e.cw||0,cr:e.cr||0,id,title:e.title,desc:e.desc,tags:e.tags.join(','),room:e.room,body:e.body,pub:e.pub,fol:e.fol,img:e.img||'',at:e.at||0};go('edit',id)}
 
 function author(n){
   const f=fl().includes(n),top=[...new Set(byLikes(D.eps.filter(vis)).slice(0,40).map(e=>e.author))].includes(n)&&n!=='運営';
   const bio=n===P.name?P.bio:((PR[n]||{}).bio||(LIVES.includes(n)?'公式・人気アカウント':'自己紹介はまだありません'));
   const eps=D.eps.filter(e=>e.author===n&&vis(e)),rs=D.rooms.filter(r=>r.author===n);
-  return `<div style="text-align:center;padding:20px">${av(n,100)}<h1 style="margin:12px 0 4px">${esc(n)}</h1>${top?'<div style="display:inline-block;color:#e08a00;background:#ffa50022;padding:6px 12px;border-radius:8px;font-weight:700">🌟 TOPクリエイター</div>':''}<p style="color:var(--sub);margin:8px 0">${esc(bio)}</p><div style="display:flex;justify-content:center;gap:28px;margin:10px 0 14px"><div><b>${fol(n)}</b><small>フォロワー</small></div><div><b>${eps.length}</b><small>作品</small></div><div><b>${rs.length}</b><small>Room</small></div></div>${n===P.name?'':`<button class=btn onclick="follow('${q(n)}')">${f?'フォロー解除':'フォローする'}</button> <button class="btn o" onclick="mute('${q(n)}')">${(P.mu||[]).includes(n)?'ミュート解除':'ミュート'}</button>`}</div>`
+  return `<div style="text-align:center;padding:20px">${av(n,100)}<h1 style="margin:12px 0 4px">${esc(n)}</h1>${supB(n)}${top?'<div style="display:inline-block;color:#e08a00;background:#ffa50022;padding:6px 12px;border-radius:8px;font-weight:700">🌟 TOPクリエイター</div>':''}<p style="color:var(--sub);margin:8px 0">${esc(bio)}</p><div style="display:flex;justify-content:center;gap:28px;margin:10px 0 14px"><div><b>${fol(n)}</b><small>フォロワー</small></div><div><b>${eps.length}</b><small>作品</small></div><div><b>${rs.length}</b><small>Room</small></div></div>${n===P.name?'':`<button class="btn o" onclick="rpOpen('user','${q(n)}')">🚩</button> ${ADM?`<button class="btn o" onclick="admBan('${q(n)}')">🔨BAN</button> `:''}<button class=btn onclick="follow('${q(n)}')">${f?'フォロー解除':'フォローする'}</button> <button class="btn o" onclick="mute('${q(n)}')">${(P.mu||[]).includes(n)?'ミュート解除':'ミュート'}</button>`}</div>`
    +cds('📂 Room',rs,1)+sec('作品',list(eps,epRow,'まだ作品がありません'));
 }
 function follow(n){n=decodeURIComponent(n);if(n==='運営'){toast('運営のアカウントはフォローできません。');return}const l=fl(),i=l.indexOf(n);i<0?l.push(n):l.splice(i,1);P.following=l.join(',');save();render()}
@@ -330,13 +332,13 @@ function profile(){
   <div style="display:flex;margin-top:12px"><div class=grow onclick="openSheet('フォロー中')" style="cursor:pointer"><b>${fl().length}</b><small>フォロー中</small></div><div class=grow onclick="openSheet('フォロワー')" style="cursor:pointer"><b>${fol(P.name)}</b><small>フォロワー</small></div></div></div>`
   +sec('通知カスタム',nt.map(([k,t])=>`<label class=tg>${t}<input type=checkbox ${n[k]?'checked':''} onchange="P.n.${k}=this.checked;save()"></label>`).join(''))
   +sec('📊 執筆記録',stats())+sec('🗓 読む・書くカレンダー',heat())+sec('🛒 ポイントショップ（'+(P.pt||0)+'pt）',shopH())
-  +extra()+sec('☁️ クラウド同期',`<div class=empty>状態：${esc(cloud)}</div><div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px"><button class="btn o" onclick="cloudPull().then(cloudPush).then(()=>render())">今すぐ同期</button><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="cloudWipe()">自分のクラウド投稿を削除</button></div>`)
+  +extra()+storeSec()+revSec()+anSec()+giftSec()+chalSec()+modSec()+sec('☁️ クラウド同期',`<div class=empty>状態：${esc(cloud)}</div><div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 12px 12px"><button class="btn o" onclick="cloudPull().then(cloudPush).then(()=>render())">今すぐ同期</button><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="cloudWipe()">自分のクラウド投稿を削除</button></div>`)
   +sec('💾 バックアップ',`<div style="display:flex;gap:8px;flex-wrap:wrap;padding:12px"><button class="btn o" onclick="bkExp()">書き出し(JSON)</button><label class="btn o">読み込み<input type=file accept=".json" hidden onchange="bkImp(this.files[0])"></label><button class="btn o" style="color:var(--red);border-color:var(--red)" onclick="wipeLocal()">この端末を初期化</button></div>`);
 }
 const openSheet=t=>{sheet={t,u:t==='フォロー中'?fl():[]};render()};
 
 /* ---------- live ---------- */
-const BOTS=['みかん','ゆず','たろう','ルナ','そら','ひなた'],BC=['続きが気になる！','声きれい✨','待ってました！','朗読最高','初見です','いい話だ…😭','ワクワクする','拍手👏'],GF=[['⭐','スター',10],['🌹','バラ',30],['👑','王冠',100]];
+const BOTS=['みかん','ゆず','たろう','ルナ','そら','ひなた'],BC=['続きが気になる！','声きれい✨','待ってました！','朗読最高','初見です','いい話だ…😭','ワクワクする','拍手👏'],GF=[['👏', '拍手', 5], ['🍬', 'キャンディ', 5], ['🌸', 'さくら', 8], ['☕', 'コーヒー', 10], ['⭐', 'スター', 10], ['🍰', 'ケーキ', 15], ['💌', 'ラブレター', 15], ['🍀', '四つ葉', 20], ['🎈', '風船', 20], ['🌈', '虹', 25], ['🌹', 'バラ', 30], ['📖', '古書', 30], ['🪄', '魔法の杖', 40], ['🕯', '灯り', 40], ['🎻', 'バイオリン', 50], ['🌙', '月', 50], ['🦋', '蝶', 60], ['🔥', '情熱の炎', 60], ['💎', 'ダイヤ', 80], ['🧸', 'くま', 80], ['👑', '王冠', 100], ['🎆', '花火', 120], ['🐉', 'ドラゴン', 150], ['🏰', 'お城', 200], ['🚀', 'ロケット', 250], ['🦄', 'ユニコーン', 300], ['🌌', '銀河', 400], ['🏆', 'トロフィー', 500], ['☄️', '流星群', 700], ['🌟', '伝説の星', 1000]];
 const rnd=a=>a[Math.floor(Math.random()*a.length)],mm=t=>String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
 function startLive(n){n=decodeURIComponent(n);const host=n===P.name;if(lv)return;if(P.name==='未設定')return toast('プロフィールで名前を設定してからライブに入れます');
   lv={a:n,host,title:host?(Fm.l.title||'ライブ配信'):n+'のライブ',rec:1,v:0,pk:0,h:0,g:0,mh:0,fx:0,c:[],pin:'',nc:'',ep:'',sc:0,gp:0,sec:0,done:0,sp:{},busy:0};
@@ -350,7 +352,7 @@ let CL=[];
 const liveStrip=()=>CL.length?`<div class=strip style="margin:0 -16px">${CL.map(x=>`<div onclick="startLive('${q(x.a)}')"><div class=ring>🎥</div>${esc(x.a)}<br><span class=badge>LIVE</span><small>👀 ${x.v||0}</small><small>${esc(String(x.t||'').slice(0,10))}</small></div>`).join('')}</div>`:`<div class=card style="margin:0"><div class=empty>配信中のライブはありません。「投稿」タブの「ライブ」から始められます</div></div>`;
 async function pollLives(){if(lv||document.hidden)return;const n=Date.now();CL=(await lq('live:')).map(r=>({a:r.id.slice(6),...r.data})).filter(x=>!x.end&&n-x.hb<20000&&x.a!==P.name&&!(P.mu||[]).includes(x.a));const e=$('#ls');if(e)e.innerHTML=liveStrip()}
 setInterval(pollLives,5000);
-async function claimG(){const o=[];try{P.gfc=P.gfc||[];for(const r of await lq('gf:'+P.name+':')){if(!P.gfc.includes(r.id)){P.gfc.push(r.id);P.pt=(P.pt||0)+r.data.pt;P.gr=(P.gr||0)+r.data.pt;o.push({f:r.data.f,pt:r.data.pt})}api('nn_profiles?id=eq.'+enc(r.id),{method:'DELETE'}).catch(()=>{})}P.gfc=P.gfc.slice(-200);if(o.length){save();boom();if(!lv)toast('🎁 投げ銭 +'+o.reduce((a,x)=>a+x.pt,0)+'pt を受け取りました')}}catch(e){}return o}
+async function claimG(){const o=[];try{P.gfc=P.gfc||[];for(const r of await lq('gf:'+P.name+':')){if(!P.gfc.includes(r.id)){P.gfc.push(r.id);P.pt=(P.pt||0)+r.data.pt;P.gr=(P.gr||0)+r.data.pt;(P.gw=P.gw||[]).unshift({f:r.data.f,g:r.data.g||'🎁',pt:r.data.pt,e:r.data.e||'',d:r.data.d||Date.now()});P.gw=P.gw.slice(0,100);o.push({f:r.data.f,pt:r.data.pt})}api('nn_profiles?id=eq.'+enc(r.id),{method:'DELETE'}).catch(()=>{})}P.gfc=P.gfc.slice(-200);if(o.length){save();boom();if(!lv)toast('🎁 投げ銭 +'+o.reduce((a,x)=>a+x.pt,0)+'pt を受け取りました')}}catch(e){}return o}
 function kick(){const l=lv;if(!l)return;clearInterval(l.t);lv=null;toast('配信が終了しました（解散）');render(1)}
 async function liveSync(){const l=lv;if(!l||l.busy||l.done)return;l.busy=1;const H=l.a,now=Date.now(),op=l.pin;
   try{if(l.host){const vs=(await lq('lv:'+H+':')).map(r=>r.data).filter(d=>now-d.hb<12000),nh=vs.reduce((a,d)=>a+(d.h||0),0);
@@ -372,7 +374,7 @@ const setFx=i=>{lv.fx=i;renderLive()},setEp=v=>{lv.ep=v;renderLive()},togSc=()=>
 function sendL(){const t=lv.nc.trim();if(!t)return;const m={n:P.name,t,d:Date.now()};lv.c.push(m);lv.nc='';const i=$('#lci');if(i)i.value='';lcr();lp('~lc:'+lv.a+':'+uid(),m)}
 const likeL=()=>{lv.mh=(lv.mh||0)+1;heart();heart();heart()};
 async function gift(i){const g=GF[i],H=lv.a;if((P.pt||0)<g[2])return toast('ポイントが足りません（ミッション・おみくじで貯めよう）');
-  try{await api('nn_profiles?on_conflict=id',{method:'POST',headers:UP,body:JSON.stringify([{id:'~gf:'+H+':'+uid(),data:{f:P.name,pt:g[2],d:Date.now()},updated_at:new Date().toISOString()}])});P.pt-=g[2];save();lp('~lc:'+H+':'+uid(),{n:P.name,t:g[0]+' '+g[1]+'を贈りました',d:Date.now(),g:1});boom();toast(g[0]+' を贈りました（'+H+'さんのポイントになります）')}catch(e){toast('送信できませんでした（通信エラー・ポイントは減っていません）')}}
+  try{await api('nn_profiles?on_conflict=id',{method:'POST',headers:UP,body:JSON.stringify([{id:'~gf:'+H+':'+uid(),data:{f:P.name,pt:g[2],d:Date.now()},updated_at:new Date().toISOString()}])});P.pt-=g[2];P.gt=(P.gt||0)+g[2];(P.gs=P.gs||[]).unshift({to:H,g:g[0]+g[1],pt:g[2],d:Date.now()});save();lp('~lc:'+H+':'+uid(),{n:P.name,t:g[0]+' '+g[1]+'を贈りました',d:Date.now(),g:1});boom();toast(g[0]+' を贈りました（'+H+'さんのポイントになります）')}catch(e){toast('送信できませんでした（通信エラー・ポイントは減っていません）')}}
 function endLive(){const l=lv;if(!l)return;
   if(l.host&&!l.done){l.done=1;const H=l.a,end=()=>lp('~live:'+H,{end:1,hb:Date.now()});end();setTimeout(end,4000);ld('lc:'+H+':');ld('lv:'+H+':');
     l.top=Object.entries(l.sp).sort((a,b)=>b[1]-a[1]).slice(0,3);P.pt=(P.pt||0)+Math.floor(l.pk/5);P.lh=P.lh||[];P.lh.unshift({t:l.title,d:Date.now(),sec:l.sec,pk:l.pk,h:l.h,g:l.g,sp:l.top});P.lh=P.lh.slice(0,30);save();boom();renderLive();return}
@@ -434,7 +436,7 @@ function heat(){const a={},n=14*7+new Date().getDay();D.eps.filter(e=>e.author==
   return `<div class=hm>${h}</div><small style="padding:0 14px 10px">過去15週間の記録（投稿=2・読んだ作品=1）</small>`}
 // 4) ポイントショップ（テーマ色・アイコン枠）
 const SH=[['t1','🌸 サクラテーマ',100,'#ff4fa3'],['t2','🌊 オーシャンテーマ',100,'#2fa8ff'],['t3','🍊 サンセットテーマ',150,'#ff8a1f'],['t4','🔮 ミスティックテーマ',200,'#8a3ffc'],['f1','🥇 ゴールド枠',80,'0 0 0 3px #ffd200,0 0 14px #ffb300'],['f2','🌈 レインボー枠',150,'0 0 0 3px #ff4fa3,0 0 0 6px #2fd4ff,0 0 0 9px #a6f21a'],['f3','⚡ ネオン枠',120,'0 0 0 3px #fff,0 0 16px 4px #2f6bff']];
-function applyTheme(){const t=SH.find(x=>x[0]===P.th),r=document.documentElement.style;if(t){r.setProperty('--ac',t[3]);r.setProperty('--ac2',t[3]+'99');r.setProperty('--acd',t[3]);r.setProperty('--bt','#fff')}else['--ac','--ac2','--acd','--bt'].forEach(k=>r.removeProperty(k))}
+function applyTheme(){const t=SHA().find(x=>x[0]===P.th),r=document.documentElement.style;if(t){r.setProperty('--ac',t[3]);r.setProperty('--ac2',t[3]+'99');r.setProperty('--acd',t[3]);r.setProperty('--bt','#fff')}else['--ac','--ac2','--acd','--bt'].forEach(k=>r.removeProperty(k))}
 const shopH=()=>`<div class=row style="cursor:default"><div class=grow>標準に戻す</div><button class="btn o" onclick="equip('')">戻す</button></div>`+SH.map(x=>{const own=(P.own||[]).includes(x[0]),on=P.th===x[0]||P.fr===x[0],t=x[0][0]=='t';return `<div class=row style="cursor:default"><span style="width:22px;height:22px;border-radius:50%;flex:none;background:${t?x[3]:'#8884'};${t?'':'box-shadow:'+x[3]}"></span><div class=grow>${x[1]}</div><button class="btn${own?' o':''}" onclick="buy('${x[0]}')">${on?'装備中':own?'装備':x[2]+'pt'}</button></div>`}).join('');
 function buy(id){const x=SH.find(v=>v[0]===id),own=P.own=P.own||[];if(!own.includes(id)){if((P.pt||0)<x[2])return toast('ポイントが足りません（ミッション・おみくじ・ライブで貯めよう）');P.pt-=x[2];own.push(id);boom();toast(x[1]+' を手に入れた！')}equip(id)}
 function equip(id){if(!id){P.th='';P.fr=''}else if(id[0]=='t')P.th=id;else P.fr=id;save();applyTheme();render()}
@@ -444,8 +446,8 @@ function notifs(){const sn=P.sn||{e:{},r:{},f:0},o=[],n=P.n;
   D.eps.filter(e=>e.author===P.name).forEach(e=>{const b=sn.e[e.id]||[0,0],lk=e.likes.filter(x=>x!==P.name).length,cm=e.comments.filter(c=>c.a!==P.name).length;
     if(n.like&&lk>b[0])o.push(['❤️','『'+e.title+'』にいいね +'+(lk-b[0]),e.id]);if(n.comment&&cm>b[1])o.push(['💬','『'+e.title+'』に感想 +'+(cm-b[1]),e.id])});
   D.rooms.filter(r=>r.author===P.name).forEach(r=>{const c=r.subs.filter(x=>x!==P.name).length,b=sn.r[r.id]||0;if(n.sub&&c>b)o.push(['📂','Room『'+r.title+'』の購読 +'+(c-b),''])});
-  D.eps.forEach(e=>e.comments.forEach(c=>{if(n.comment&&c.a!==P.name&&c.d>(sn.mt||0)&&c.t.includes('@'+P.name))o.push(['↩️',c.a+'さんから返信：'+c.t.slice(0,20),e.id])}));const f=fol(P.name);if(n.follow&&f>sn.f)o.push(['🙋','フォロワー +'+(f-sn.f),'']);return o}
-const openNotif=()=>{sheet={t:'🔔 通知',nt:notifs()};snap();render()};
+  D.eps.forEach(e=>e.comments.forEach(c=>{if(n.comment&&c.a!==P.name&&c.d>(sn.mt||0)&&c.t.includes('@'+P.name))o.push(['↩️',c.a+'さんから返信：'+c.t.slice(0,20),e.id])}));modNotifs(o);const f=fol(P.name);if(n.follow&&f>sn.f)o.push(['🙋','フォロワー +'+(f-sn.f),'']);return o}
+const openNotif=()=>{sheet={t:'🔔 通知',nt:notifs()};snap();modSeen();render()};
 function sheetHTML(){return `<div class=sheet><div class=nb><button onclick="sheet=null;render()">‹ 閉じる</button><b>${sheet.t}</b></div>${sheet.h?sheet.h:sheet.cm?cmH():sheet.nt?list(sheet.nt,n=>`<div class=row onclick="sheet=null;${n[2]?`go('ep','${n[2]}')`:'render()'}"><span style="font-size:22px">${n[0]}</span><div class=grow>${esc(n[1])}</div></div>`,'新しいお知らせはありません'):list(sheet.u,u=>`<div class=row onclick="sheet=null;go('author','${q(u)}')">${av(u,36)}<b>${esc(u)}</b></div>`,'ユーザーがいません')}</div>`}
 
 /* ---------- 新機能5つ（2026-11追加）---------- */
@@ -554,7 +556,7 @@ function srTag(t){SR.q='#'+decodeURIComponent(t);SR.sc=0;stack=[];tab=1;render(1
 
 /* ---------- 新機能5つ（第3弾）---------- */
 // 1)下書き箱 2)あとで読む/読了 3)返信＆メンション 4)テーマ切替 5)次に読む
-function dSave(){const f=Fm.n;if(!f.title&&!f.body)return toast('タイトルか本文を入力してください');P.dr=P.dr||[];const id=f.did||uid(),i=P.dr.findIndex(x=>x.id===id),d={id,title:f.title,desc:f.desc,tags:f.tags,room:f.room,body:f.body,d:Date.now()};i<0?P.dr.unshift(d):P.dr[i]=d;f.did=id;P.dr=P.dr.slice(0,30);try{localStorage.setItem('nn_draft',JSON.stringify(f))}catch(e){}save();toast('💾 下書き箱に保存しました（'+P.dr.length+'件）')}
+function dSave(){const f=Fm.n;if(!f.title&&!f.body)return toast('タイトルか本文を入力してください');P.dr=P.dr||[];const id=f.did||uid(),i=P.dr.findIndex(x=>x.id===id),d={id,title:f.title,desc:f.desc,tags:f.tags,room:f.room,body:f.body,d:Date.now()};i<0?P.dr.unshift(d):P.dr[i]=d;f.did=id;P.dr=P.dr.slice(0,30+(P.dx||0)+(prem()?30:0));try{localStorage.setItem('nn_draft',JSON.stringify(f))}catch(e){}save();toast('💾 下書き箱に保存しました（'+P.dr.length+'件）')}
 const dHtml=()=>`<div class=card>${(P.dr||[]).length?P.dr.map((d,i)=>`<div class=row style="cursor:default"><div class=grow onclick="dLoad('${d.id}')" style="cursor:pointer"><b>${esc(d.title||'（無題）')}</b><small>${ago(d.d)}・${d.body.length}字・タップで続きを書く</small><small>${esc(d.body.slice(0,40))}</small></div><button class=del onclick="dDel(${i})">🗑</button></div>`).join(''):'<div class=empty>下書きはありません。投稿画面の「💾 下書き保存」で保存できます</div>'}</div>`;
 const dOpen=()=>{sheet={t:'📂 下書き箱',h:dHtml()};render()},dDel=i=>{if(!confirm('この下書きを削除しますか？'))return;P.dr.splice(i,1);save();dOpen()};
 function dLoad(id){const d=P.dr.find(x=>x.id===id);if(!d)return;Object.assign(Fm.n,{title:d.title,desc:d.desc,tags:d.tags,room:d.room,body:d.body,did:d.id});try{localStorage.setItem('nn_draft',JSON.stringify(Fm.n))}catch(e){}sheet=null;stack=[];mode=0;tab=TABS.findIndex(x=>x[1]==='投稿');render(1);toast('下書きを読み込みました')}
@@ -569,21 +571,189 @@ function simil(e){const dn=P.dn||{},ok=x=>x.id!==e.id&&vis(x)&&!dn[x.id]&&(!x.fo
   c=D.eps.filter(ok).map(x=>({x,s:x.tags.filter(t=>tg.has(t)&&t!=='リレー小説').length*3+(e.room&&x.room===e.room?5:0)+(x.author===e.author?2:0)})).filter(a=>a.s>0).sort((a,b)=>b.s-a.s||b.x.likes.length-a.x.likes.length).slice(0,8).map(a=>a.x),
   r=c.length?c:byLikes(D.eps.filter(ok)).slice(0,5);return r.length?`<div style="margin:0 -16px">${cds(c.length?'📚 次に読む（似た作品）':'📚 次に読む（人気作品）',r)}</div>`:''}
 
+/* ---------- 安全機能：通報・BAN・AI審査（+新機能7つ） ---------- */
+// 新機能: ①通報の自動仮非表示 ②警告→投稿制限(ストライク) ③NGワード ④コンテンツ警告 ⑤コメント制限＆削除 ⑥異議申し立て ⑦通報結果のお知らせ
+const MOD_URL='',MOD_FAIL_OPEN=true; // MOD_URL に Edge Function「moderate」のURLを入れるとAI審査が有効になります
+const DEV=(()=>{let d=null;try{d=localStorage.getItem('nn_dev');if(!d){d=uid()+uid();localStorage.setItem('nn_dev',d)}}catch(e){d=d||'x'}return d})();
+let BANS=[],BS=[],RC={},MYR=[],ADM=!!sessionStorage.getItem('nn_pin'),CWOK={},ADR=[];
+const pin=()=>sessionStorage.getItem('nn_pin')||'';
+const rpc=(f,a)=>api('rpc/'+f,{method:'POST',body:JSON.stringify(a)});
+const banOn=b=>!b.until||new Date(b.until)>new Date();
+const myBan=()=>BANS.find(b=>banOn(b)&&(b.name===P.name||(b.device&&b.device===DEV)));
+const RPR=['下ネタ・性的な内容','政治・宗教の勧誘','暴力・グロテスク','誹謗中傷・嫌がらせ','スパム・宣伝','盗作・著作権侵害','その他'];
+// ---- 記号・空白・全角半角・カタカナを無視して判定 ----
+const fold=s=>norm(s).replace(/[\u200b-\u200f\u2060\ufeff\s]/g,'').replace(/[\u3001-\u3004\u3008-\u3020\u3030\u30fb\u30fc\uff5e!-\/:-@\[-`{-~]/g,'').replace(/[\u2000-\u2bff]/g,'').replace(/\p{Extended_Pictographic}/gu,'');
+const WS=['ちんこ','ちんちん','ちんぽ','まんこ','せっくす','セックス','えっち','えろい','おなにー','しこしこ','ふぇら','なかだし','中出し','ぼっき','勃起','射精','おっぱい','うんこ','うんち','ちくび','乳首','やりまん','ビッチ','sex','porn','fuck'].map(fold);
+const WP=['自民党','立憲民主','共産党','公明党','日本維新','参政党','れいわ','国民民主','国会議員','政治家','政党','国政選挙','与党','野党','憲法改正','安倍','岸田','石破','高市','習近平','プーチン','トランプ','バイデン','靖国','反日','右翼','左翼','ネトウヨ','パヨク','増税'].map(fold);
+function localChk(t){const f=fold(t),g=f.replace(/0/g,'o').replace(/1/g,'i').replace(/3/g,'e'),h=l=>l.some(w=>w&&(f.includes(w)||g.includes(w)));
+  if(h(WS))return{ok:false,reason:'性的な表現（下ネタ）が含まれています',cat:'sex'};if(h(WP))return{ok:false,reason:'政治に関する内容が含まれています',cat:'pol'}}
+async function modCheck(t,kind){const l=localChk(t);if(l)return l;if(!MOD_URL)return{ok:true};
+  try{const c=new AbortController();setTimeout(()=>c.abort(),15000);const r=await fetch(MOD_URL,{method:'POST',signal:c.signal,headers:{'Content-Type':'application/json',apikey:KEY,Authorization:'Bearer '+KEY},body:JSON.stringify({text:t.slice(0,6000),kind})});if(!r.ok)throw 0;const j=await r.json();return j.ok?{ok:true}:{ok:false,reason:j.reason||'不適切な内容と判定されました',cat:'ai'}}
+  catch(e){return MOD_FAIL_OPEN?{ok:true}:{ok:false,reason:'審査サーバーに接続できませんでした。時間をおいて再投稿してください',cat:'net'}}}
+async function guard(kind,t){const b=myBan();if(b){banSheet(b);return 0}
+  if((P.lim||0)>Date.now()){toast('⏳ 違反が続いたため投稿制限中（あと'+Math.ceil((P.lim-Date.now())/6e4)+'分）');return 0}
+  const btn=$('#sb'),old=btn&&btn.textContent;if(btn){btn.disabled=true;btn.textContent='🤖 AIが審査中…'}
+  const r=await modCheck(t,kind);if(btn){btn.disabled=false;btn.textContent=old}
+  if(r.ok)return 1;strike(r,t,kind);return 0}
+// ②ストライク：24時間で3回→1時間制限／5回→24時間制限
+function strike(r,t,kind){const n=Date.now(),a=P.st=[...(P.st||[]).filter(x=>n-x<864e5),n];if(a.length>=5)P.lim=n+864e5;else if(a.length>=3)P.lim=n+36e5;save();
+  api('nn_modlog',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({id:uid(),author:P.name,kind,reason:r.reason,excerpt:t.slice(0,200),device:DEV})}).catch(()=>{});
+  sheet={t:'⚠️ 投稿できませんでした',h:`<div class=pad><div class=card style="padding:14px"><b style="color:var(--red)">${esc(r.reason)}</b><p>下ネタ・政治に関する内容は投稿できません。記号や空白で区切った表記も判定されます。修正して再投稿してください。</p><small>警告 ${a.length}/3（24時間以内）。3回で1時間、5回で24時間の投稿制限になります。</small></div><button class="btn o w" onclick="apOpen('ai')">誤判定として異議申し立て</button></div>`};render()}
+const _se=submitEp,_sc=sendC,_ap=addPart,_mr=mkRoom,_ml=mkRelay;
+submitEp=async k=>{const f=Fm[k];if(!await guard('post',[f.title,f.desc,f.tags,f.body].join('\n')))return;const cw=f.cw||0,cr=f.cr||0,ex=f.ex||0,id=f.id;_se(k);const e=k==='e'?D.eps.find(x=>x.id===id):D.eps[D.eps.length-1];if(e){e.cw=cw;e.cr=cr;if(ex)e.ex=Date.now()+[0,864e5,6048e5][ex];e.u=Date.now();save()}};
+sendC=async id=>{const e=D.eps.find(x=>x.id===id),t=($('#ci')||{}).value||'',cr=e.cr||0;
+  if(cr==2&&e.author!==P.name)return toast('この作品はコメントを受け付けていません');
+  if(cr==1&&e.author!==P.name&&!((PR[e.author]||{}).following||[]).includes(P.name))return toast('作者がフォローしている人のみコメントできます');
+  if(!await guard('comment',t))return;_sc(id)};
+addPart=async id=>{if(!await guard('relay',($('#rt')||{}).value||''))return;_ap(id)};
+mkRoom=async()=>{if(!await guard('room',Fm.r.title+'\n'+Fm.r.desc))return;_mr()};
+mkRelay=async()=>{if(!await guard('relay',Fm.rl.title+'\n'+Fm.rl.desc+'\n'+Fm.rl.text))return;_ml()};
+// ---- 表示フィルタ（BAN・仮非表示・NGワード） ----
+const ngHit=t=>(P.ng||[]).some(w=>fold(w)&&fold(t).includes(fold(w)));
+function modOk(e){return e.author===P.name||(!BS.includes(e.author)&&!e.hid&&!(e.ex&&e.ex<Date.now())&&!(RC[e.id]>=3)&&!ngHit([e.title,e.desc,(e.tags||[]).join(' ')].join(' ')))}
+const cOk=(c,e)=>!c.del&&!(c.a!==P.name&&RC[e.id+'|'+c.d]>=3)&&!BS.includes(c.a)&&!ngHit(c.t);
+function cDel(id,d){if(!confirm('このコメントを削除しますか？'))return;const e=D.eps.find(x=>x.id===id),c=e&&e.comments.find(x=>x.d==d);if(!c)return;c.del=1;c.t='';e.u=Date.now();save();render()}
+// ④コンテンツ警告
+const cwGate=e=>`<div class=lock><div style="font-size:40px">⚠️</div><h3 style="margin:8px 0">${['','R-15（性的示唆あり）','暴力・流血表現あり','ネタバレを含みます'][e.cw]}</h3><p style="color:var(--sub)">『${esc(e.title)}』を表示しますか？</p><button class=btn onclick="CWOK['${e.id}']=1;render()">表示して読む</button></div>`;
+// ---- 通報 ----
+function rpOpen(kind,t){t=decodeURIComponent(t);sheet={t:'🚩 通報',h:`<div class=pad><small>複数人から通報された作品・コメントは、運営の確認が終わるまで仮非表示になります。</small><select id=rpr>${RPR.map(x=>`<option>${x}</option>`).join('')}</select><textarea id=rpd placeholder="詳細（任意）" style="min-height:90px"></textarea><button class="btn w" onclick="rpSend('${kind}','${q(t)}')">通報する</button></div>`};render()}
+async function rpSend(kind,t){t=decodeURIComponent(t);if(P.name==='未設定')return toast('プロフィールで名前を設定してください');
+  const au=kind==='user'?t:(D.eps.find(x=>x.id===t.split('|')[0])||{}).author;if(au===P.name)return toast('自分自身は通報できません');
+  try{await api('nn_reports?on_conflict=id',{method:'POST',headers:{Prefer:'resolution=ignore-duplicates,return=minimal'},body:JSON.stringify([{id:P.name+'~'+t,kind,target:t,target_author:au||'',reporter:P.name,reason:$('#rpr').value,detail:$('#rpd').value.slice(0,500),status:'open'}])});sheet=null;toast('通報しました。ご協力ありがとうございます');modPull()}catch(e){toast('通報できませんでした（SQLを実行しましたか？）')}}
+// ⑥異議申し立て
+function apOpen(k){sheet={t:'📨 異議申し立て',h:`<div class=pad><textarea id=apt placeholder="誤判定・誤BANだと考える理由を書いてください" style="min-height:120px"></textarea><button class="btn w" onclick="apSend('${k}')">送信</button></div>`};render()}
+async function apSend(k){const m=$('#apt').value.trim();if(!m)return;try{await api('nn_appeals',{method:'POST',headers:{Prefer:'return=minimal'},body:JSON.stringify({id:uid(),author:P.name,device:DEV,kind:k,message:m.slice(0,500)})});sheet=null;toast('送信しました。運営が確認します');render()}catch(e){toast('送信できませんでした')}}
+// ⑦通報結果のお知らせ
+function modNotifs(o){MYR.forEach(r=>{if(r.status!=='open'&&!(P.rn||[]).includes(r.id))o.push(['🚩','通報の結果：'+(r.result||'対応済み'),''])})}
+const modSeen=()=>{P.rn=MYR.filter(r=>r.status!=='open').map(r=>r.id).slice(-200);save()};
+// ---- 同期 ----
+async function modPull(){try{BANS=(await api('nn_bans?select=*'))||[];BS=BANS.filter(banOn).map(b=>b.name);const rs=(await api('nn_reports?select=id,target,reporter,status,result&order=created_at.desc&limit=1000'))||[],s={};RC={};MYR=[];
+  rs.forEach(r=>{if(r.reporter===P.name)MYR.push(r);if(r.status==='open')(s[r.target]=s[r.target]||new Set()).add(r.reporter)});for(const k in s)RC[k]=s[k].size;
+  const b=myBan();if(b&&!modPull.sh){modPull.sh=1;banSheet(b)}if(!lv&&!sheet&&!/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName))render()}catch(e){}}
+function banSheet(b){sheet={t:'🚫 アカウント停止中',h:`<div class=pad><div class=card style="padding:14px"><b>このアカウントは利用規約違反のため停止されています</b><p>理由：${esc(b.reason||'')}</p><small>${b.until?'解除予定：'+new Date(b.until).toLocaleString():'期限：なし'}</small><small>停止中も閲覧はできますが、投稿・コメントはできません。</small></div><button class="btn o w" onclick="apOpen('ban')">異議申し立て</button></div>`};render()}
+function modInit(){setTimeout(settle,3000);setInterval(settle,60000);modPull();setInterval(modPull,60000);if(P.name&&P.name!=='未設定')rpc('touch_seen',{p_name:P.name,p_dev:DEV}).catch(()=>{})}
+// ---- プロフィール欄 ----
+function modSec(){const st=(P.st||[]).filter(x=>Date.now()-x<864e5).length;
+  return sec('🛡 安全・モデレーション',`<div class=empty>警告 ${st}/3（24時間）${(P.lim||0)>Date.now()?'・投稿制限中':''}${myBan()?'・停止中':''}<br>投稿・コメントは公開前にAIが審査します。</div><div style="padding:0 14px 8px"><input id=ngi placeholder="🙈 見たくない言葉（NGワード）を追加" onkeydown="if(event.key=='Enter')ngAdd()"><div style="margin-top:8px">${(P.ng||[]).map((w,i)=>`<span class=bd onclick="ngDel(${i})">${esc(w)} ✕</span>`).join('')||'<small>NGワードを含む作品・コメントは自分の画面から非表示になります</small>'}</div></div><div style="display:flex;gap:8px;flex-wrap:wrap;padding:0 14px 12px"><button class="btn o" onclick="apOpen('other')">📨 異議申し立て</button><button class="btn o" onclick="admLogin()">${ADM?'🛠 管理パネル':'🔐 運営ログイン'}</button></div>`)}
+const ngAdd=()=>{const v=$('#ngi').value.trim();if(!v)return;(P.ng=P.ng||[]).push(v);save();render()},ngDel=i=>{P.ng.splice(i,1);save();render()};
+// ---- 運営（PINはSQL側で検証） ----
+async function admLogin(){if(!ADM){const p=prompt('運営PIN');if(!p)return;try{if(!await rpc('adm_ok',{p_pin:p}))return toast('PINが違います');sessionStorage.setItem('nn_pin',p);ADM=true}catch(e){return toast('SQLが未設定です')}}admOpen()}
+async function admOpen(){try{const rs=ADR=await rpc('adm_reports',{p_pin:pin()}),ap=await rpc('adm_appeals',{p_pin:pin()});
+  sheet={t:'🛠 管理パネル',h:`<h3>🚩 未対応の通報（${rs.length}）</h3><div class=card>${list(rs,r=>`<div class=row style="cursor:default;display:block"><b>${esc(r.reason)}</b>・${esc(r.kind)}<small>通報者 ${esc(r.reporter)} → 対象 ${esc(r.target_author)}</small><small>${esc(r.detail||'')}</small><div class=tb><button onclick="sheet=null;go('${r.kind=='user'?'author':'ep'}','${q(r.kind=='cm'?r.target.split('|')[0]:r.target)}')">見る</button><button onclick="admAct('${q(r.id)}','hide')">非表示</button><button onclick="admAct('${q(r.id)}','ban')">BAN</button><button onclick="admAct('${q(r.id)}','no')">問題なし</button></div></div>`,'通報はありません')}</div><h3>📨 異議申し立て（${ap.length}）</h3><div class=card>${list(ap,a=>`<div class=row style="cursor:default;display:block"><b>${esc(a.author)}</b><small>${esc(a.message)}</small><div class=tb><button onclick="admUnban('${q(a.author)}')">BAN解除</button></div></div>`,'なし')}</div>`};render()}catch(e){ADM=false;sessionStorage.removeItem('nn_pin');toast('取得できませんでした')}}
+async function admAct(id,a){id=decodeURIComponent(id);const r=ADR.find(x=>x.id===id);if(!r)return;let res='問題なしと判断されました';
+  if(a==='hide'){const[eid,cd]=r.target.split('|'),e=D.eps.find(x=>x.id===eid);if(e){if(r.kind==='cm'){const c=e.comments.find(x=>String(x.d)===cd);if(c){c.del=1;c.t=''}}else e.hid=1;e.u=Date.now();save()}res='内容を非表示にしました'}
+  if(a==='ban'){if(!await admBan(q(r.target_author)))return;res='投稿者のアカウントを停止しました'}
+  try{await rpc('adm_set_report',{p_pin:pin(),p_id:id,p_status:a==='no'?'dismissed':'done',p_result:res});toast('処理しました');modPull();admOpen()}catch(e){toast('失敗しました')}}
+async function admBan(n){n=decodeURIComponent(n);const why=prompt(n+' をBANします。理由：');if(why==null)return 0;const d=+prompt('日数（0=永久）','0')||0;try{await rpc('adm_ban',{p_pin:pin(),p_name:n,p_reason:why,p_days:d});toast('BANしました');modPull();return 1}catch(e){toast('BANできませんでした');return 0}}
+async function admUnban(n){n=decodeURIComponent(n);try{await rpc('adm_unban',{p_pin:pin(),p_name:n});toast('解除しました');modPull();admOpen()}catch(e){toast('失敗しました')}}
+
+/* ---------- 投げ銭強化＋新概念4つ ---------- */
+// 新機能: ①サポーター称号 ②読者投票（次の展開を決める） ③期間限定公開（24時間/7日で自動非公開） ④月間読書チャレンジ
+const SUP=[[5e3,'💠','レジェンド'],[1500,'🥇','ゴールド'],[500,'🥈','シルバー'],[100,'🥉','ブロンズ']];
+function giftOpen(id){sheet={t:'🎁 投げ銭を贈る',h:`<div class=pad><small>所持 <b>${P.pt||0}pt</b>　贈った分は作者のポイントになり、あなたのサポーター称号が上がります</small><div class=lvt style="margin-top:8px">${GF.map((g,i)=>`<div onclick="giftEp('${id}',${i})" style="cursor:pointer;font-size:28px">${g[0]}<b style="font-size:12px">${g[2]}pt</b><small style="font-size:10px;text-align:center">${g[1]}</small></div>`).join('')}</div></div>`};render()}
+async function giftEp(id,i){const e=D.eps.find(x=>x.id===id),g=GF[i];if(!e)return;if(P.name==='未設定')return toast('プロフィールで名前を設定してください');if(e.author===P.name)return toast('自分の作品には贈れません');if(myBan())return banSheet(myBan());if((P.pt||0)<g[2])return toast('ポイントが足りません（ミッション・おみくじで貯めよう）');
+  try{await api('nn_profiles?on_conflict=id',{method:'POST',headers:UP,body:JSON.stringify([{id:'~gf:'+e.author+':'+uid(),data:{f:P.name,pt:g[2],d:Date.now(),g:g[0]+g[1],e:e.title},updated_at:new Date().toISOString()}])});
+    P.pt-=g[2];P.gt=(P.gt||0)+g[2];(P.gs=P.gs||[]).unshift({to:e.author,g:g[0]+g[1],pt:g[2],e:e.title,d:Date.now()});P.gs=P.gs.slice(0,100);save();boom();sheet=null;toast(g[0]+' '+e.author+'さんに「'+g[1]+'」を贈りました');render()}
+  catch(x){toast('送信できませんでした（ポイントは減っていません）')}}
+function giftSec(){const t=P.gt||0,nx=[...SUP].reverse().find(x=>t<x[0]);
+  const rw=(P.gw||[]).slice(0,8).map(x=>`<div class=row style="cursor:default"><span style="font-size:22px">${[...x.g][0]}</span><div class=grow><b>${esc(x.f)}</b>さんから ${x.pt}pt<small>${esc(x.e||'')} ${ago(x.d)}</small></div></div>`).join('')||'<div class=empty>まだ受け取っていません</div>';
+  return sec('🎁 投げ銭・サポーター',`<div class=empty>送った累計 <b>${t}pt</b>${supB(P.name)}　${nx?'次の称号まであと '+(nx[0]-t)+'pt':'最高称号です'}<br>もらった累計 <b>${P.gr||0}pt</b></div>${rw}`)}
+// ②読者投票
+function pollH(e){const o=e.po,me=P.name,X=e.ex?`<small>⏳ ${e.ex>Date.now()?'あと'+Math.ceil((e.ex-Date.now())/36e5)+'時間で非公開':'公開終了（本人のみ表示）'}</small>`:'';
+  if(!o)return X+(e.author===me?`<div class=tb><button onclick="pollMk('${e.id}')">🗳 読者投票をつくる</button></div>`:'');
+  const v=o.o.map((_,i)=>(e['pv'+i]||[]).length),tot=v.reduce((a,b)=>a+b,0),mine=o.o.findIndex((_,i)=>(e['pv'+i]||[]).includes(me));
+  return X+`<div class=card style="margin:12px 0;padding:12px"><b>🗳 ${esc(o.q)}</b>${o.o.map((t,i)=>`<div onclick="pollVote('${e.id}',${i})" style="cursor:pointer;margin-top:8px;position:relative;background:#8882;border-radius:8px;overflow:hidden;padding:6px 10px"><div style="position:absolute;inset:0;width:${tot?v[i]/tot*100:0}%;background:#a6f21a55"></div><span style="position:relative">${mine==i?'✅ ':''}${esc(t)}　<b>${v[i]}票</b></span></div>`).join('')}<small>${tot}票・タップで投票（もう一度押すと取り消し）</small></div>`}
+async function pollMk(id){const q1=prompt('読者への質問（例：主人公はどうする？）');if(!q1)return;const os=(prompt('選択肢をカンマ区切りで（2〜4個）','告白する,黙っている')||'').split(/[,、]/).map(s=>s.trim()).filter(Boolean).slice(0,4);if(os.length<2)return toast('選択肢は2つ以上必要です');
+  if(!await guard('poll',q1+'\n'+os.join('\n')))return;const e=D.eps.find(x=>x.id===id);e.po={q:q1.slice(0,60),o:os.map(s=>s.slice(0,30))};e.u=Date.now();save();render()}
+function pollVote(id,i){const e=D.eps.find(x=>x.id===id),me=P.name;if(me==='未設定')return toast('プロフィールで名前を設定してください');if(myBan())return banSheet(myBan());
+  const had=(e['pv'+i]||[]).includes(me);e.po.o.forEach((_,k)=>{const a=e['pv'+k]=e['pv'+k]||[],j=a.indexOf(me);if(j>=0)a.splice(j,1)});if(!had)e['pv'+i].push(me);e.u=Date.now();save();render()}
+// ④月間読書チャレンジ
+function chalSec(){const d=new Date(),k=d.getFullYear()+'-'+(d.getMonth()+1),c=P.ch=(P.ch&&P.ch.m===k)?P.ch:{m:k,g:10,done:0},n=Object.entries(P.rl||{}).filter(([x])=>x.startsWith(k+'-')).reduce((a,[,v])=>a+v.length,0);
+  if(n>=c.g&&!c.done){c.done=1;P.pt=(P.pt||0)+50;save();boom();toast('🏁 月間読書チャレンジ達成！ +50pt')}
+  return sec('📚 月間読書チャレンジ',`<div class=empty>今月の目標 <b>${c.g}</b>作品　読んだ数 <b>${n}</b></div><div style="padding:0 14px 12px"><div style="height:8px;background:#8883;border-radius:4px"><div style="height:8px;width:${Math.min(100,n/c.g*100)}%;background:var(--c4);border-radius:4px"></div></div><div class=tb>${[5,10,20,30].map(x=>`<button onclick="P.ch.g=${x};save();render()">${x}作品</button>`).join('')}</div><small>${c.done?'✅ 今月は達成済み（+50pt受取済み）':'達成で +50pt（月1回）'}</small></div>`)}
+
+/* ---------- 収益ポイント＆アナリティクス（本人のみ） ---------- */
+const RV={v:1,l:3,m:4,c:5,r:1}; // 基本：閲覧+1 いいね+3 ブクマ+4 感想+5 リアクション+1（上限なし）
+const HIT=[[2e4,3,'大ヒット'],[5e3,2,'ヒット'],[1e3,1.5,'人気作'],[0,1,'']]; // 読者数によるヒット倍率
+const MSB=[[100,30],[500,100],[1e3,300],[5e3,1500],[1e4,4e3],[5e4,2e4],[1e5,5e4]]; // 読者数マイルストーンボーナス
+const dk=t=>{const d=new Date(t);return String(d.getFullYear()*1e4+(d.getMonth()+1)*100+d.getDate())};
+const days=n=>[...Array(n)].map((_,i)=>Date.now()-(n-1-i)*864e5);
+const vwDay=(e,k)=>(e.vw||[]).filter(x=>x.split('@')[1].slice(0,8)===k).length;
+const pct=(a,b)=>b?Math.round(a/b*1000)/10+'%':'-';
+// 閲覧記録：読者×日ごとに1回（名前@年月日時）
+const _seen=seen;seen=function(id){_seen(id);const e=D.eps.find(x=>x.id===id);if(!e||e.author===P.name||P.name==='未設定')return;
+  const t=new Date(),k=String(t.getFullYear()*1e6+(t.getMonth()+1)*1e4+t.getDate()*100+t.getHours()),a=e.vw=e.vw||[];
+  if(a.some(x=>x.startsWith(P.name+'@'+k.slice(0,8))))return;a.push(P.name+'@'+k);if(a.length>3000)a.shift();e.u=Date.now();save()};
+function evStat(e){const a=e.author,ok=n=>n&&n!==a&&n!=='未設定'&&!BS.includes(n),vw=e.vw||[],per={};vw.forEach(x=>{const n=x.split('@')[0];if(ok(n))per[n]=(per[n]||0)+1});(e.rd||[]).forEach(n=>{if(ok(n)&&!per[n])per[n]=1});
+  const vi=Object.keys(per).length,vd=Object.values(per).reduce((t,d)=>t+Math.min(d,3),0),lk=e.likes.filter(ok).length,mk=e.marks.filter(ok).length,cm=e.comments.filter(c=>ok(c.a)&&!c.del).length,rx=Object.values(e.rx||{}).reduce((t,l)=>t+l.filter(ok).length,0),
+  base=vd*RV.v+lk*RV.l+mk*RV.m+cm*RV.c+rx*RV.r,hm=HIT.find(h=>vi>=h[0]);
+  return{vw:Math.max(vw.length,(e.rd||[]).length),vi,lk,mk,cm,rx,eng:lk+mk+cm+rx,base,hm:hm[1],ht:hm[2],pt:Math.floor(base*hm[1])}}
+function weekly2(){const t=new Date(),off=(t.getDay()+6)%7,wk=ymd(t.getTime()-off*864e5);if(P.wkd===wk)return 0;P.wkd=wk;
+  const ks=[...Array(7)].map((_,i)=>dk(t.getTime()-(off+7-i)*864e5)),sc={};
+  D.eps.filter(e=>e.author!=='運営'&&!e.hid).forEach(e=>{sc[e.author]=(sc[e.author]||0)+ks.reduce((a,k)=>a+vwDay(e,k),0)});
+  const i=Object.entries(sc).filter(x=>x[1]>0).sort((a,b)=>b[1]-a[1]).slice(0,3).findIndex(x=>x[0]===P.name);if(i<0)return 0;const b=[300,150,80][i];toast('🏅 先週の閲覧ランキング '+(i+1)+'位！ +'+b+'pt');boom();return b}
+function settle(){const me=P.name;if(me==='未設定'||myBan())return;const rv=P.rv=P.rv||{},ms=P.msd=P.msd||{};let add=0,hit=0;
+  D.eps.filter(e=>e.author===me&&!e.hid&&!(RC[e.id]>=3)).forEach(e=>{const s=evStat(e),o=rv[e.id]||0;if(s.pt>o){add+=s.pt-o;rv[e.id]=s.pt}
+    MSB.forEach(([n,b])=>{const k=e.id+':'+n;if(s.vi>=n&&!ms[k]){ms[k]=1;add+=b;hit=n}})});
+  if(hit){boom();toast('🎉 読者'+hit+'人達成！ボーナス獲得')}else if(add>0)toast('💰 収益ポイント +'+add+'pt');
+  add+=weekly2();if(prem())add=Math.floor(add*1.1);if(add>0){P.pt=(P.pt||0)+add;P.rvt=(P.rvt||0)+add;save()}else if(P.wkd)save()}
+const bars=(a,l)=>{const m=Math.max(1,...a),w=300/a.length;return `<svg viewBox="0 0 300 80" style="width:100%;background:var(--card);border-radius:10px">${a.map((v,i)=>`<rect x="${i*w+2}" y="${70-v/m*55}" width="${w-4}" height="${v/m*55}" rx="2" fill="#8a3ffc"/><text x="${i*w+w/2}" y="79" font-size="7" text-anchor="middle" fill="#888">${l[i]}</text>${v?`<text x="${i*w+w/2}" y="${67-v/m*55}" font-size="7" text-anchor="middle" fill="#888">${v}</text>`:''}`).join('')}</svg>`};
+const revSec=()=>sec('💰 収益ポイント',`<div class=empty>累計 <b>${P.rvt||0}pt</b>（上限なし）<br>基本：閲覧 +${RV.v}／いいね +${RV.l}／ブクマ +${RV.m}／感想 +${RV.c}／リアクション +${RV.r}<br>🔥 ヒット倍率：読者1,000人で×1.5／5,000人で×2／20,000人で×3<br>🎉 マイルストーン：読者100人 +30／500人 +100／1,000人 +300／5,000人 +1,500／1万人 +4,000／5万人 +20,000／10万人 +50,000pt<br>🏅 週間ランキング：先週の閲覧数TOP3に +300／+150／+80pt<br><small>不正対策：同じ人からの閲覧は1作品につき3日分まで。名前未設定・BAN中のユーザーの反応、通報で仮非表示になった作品は対象外です。</small></div>`);
+function anSec(){const my=D.eps.filter(e=>e.author===P.name),S=my.map(e=>({e,s:evStat(e)})),tot=S.reduce((a,x)=>({v:a.v+x.s.vw,l:a.l+x.s.lk,g:a.g+x.s.eng}),{v:0,l:0,g:0}),
+  d=days(14).map(t=>my.reduce((a,e)=>a+vwDay(e,dk(t)),0)),w1=d.slice(7).reduce((a,b)=>a+b,0),w0=d.slice(0,7).reduce((a,b)=>a+b,0),df=w0?Math.round((w1-w0)/w0*100):null;
+  return sec('📊 アナリティクス（本人のみ）',`<div class=lvt><div><b>${w1}</b>閲覧(7日)</div><div><b>${df===null?'-':(df>=0?'+':'')+df+'%'}</b>前週比</div><div><b>${tot.l}</b>いいね</div><div><b>${pct(tot.g,tot.v)}</b>反応率</div></div><div style="padding:0 14px 8px">${bars(d.slice(7),days(7).map(t=>new Date(t).getDate()))}</div>${list(S.sort((a,b)=>b.s.vw-a.s.vw).slice(0,10),x=>`<div class=row onclick="insOpen('${x.e.id}')"><div class=grow><b>${esc(x.e.title)}</b><small>👀${x.s.vw}　❤️${x.s.lk}　💬${x.s.cm}　🔖${x.s.mk}　💰${(P.rv||{})[x.e.id]||0}pt</small></div>›</div>`,'作品を投稿すると分析が表示されます')}`)}
+function insOpen(id){const e=D.eps.find(x=>x.id===id);if(!e||e.author!==P.name)return;const s=evStat(e),vw=e.vw||[],
+  fo=vw.filter(x=>((PR[x.split('@')[0]]||{}).following||[]).includes(P.name)).length,hr=[...Array(24)].map((_,h)=>vw.filter(x=>+x.split('@')[1].slice(8,10)===h).length),g=(P.gw||[]).filter(x=>x.e===e.title).reduce((a,x)=>a+x.pt,0),c=(v,t)=>`<div><b>${v}</b>${t}</div>`;
+  sheet={t:'📊 インサイト',h:`<div class=pad><b>『${esc(e.title)}』</b><div class=lvt style="margin-top:8px">${c(s.vw,'閲覧')+c(s.vi,'読者数')+c(s.lk,'いいね')+c(s.mk,'ブクマ')+c(s.cm,'感想')+c(s.rx,'リアクション')+c(s.eng,'エンゲージメント')+c(pct(s.eng,s.vw),'反応率')+c(pct(s.lk,s.vw),'いいね率')+c(pct(fo,s.vw),'フォロワー閲覧')+c((P.rv||{})[e.id]||0,'収益pt')+c('×'+s.hm,'ヒット倍率')+c(g+'pt','投げ銭')}</div><h3 style="margin-left:0">日別の閲覧（7日）</h3>${bars(days(7).map(t=>vwDay(e,dk(t))),days(7).map(t=>new Date(t).getDate()))}<h3 style="margin-left:0">時間帯別の閲覧</h3>${bars(hr,hr.map((_,h)=>h%6?'':h))}<small>この画面は作者本人にのみ表示されます。閲覧は読者ごとに1日1回で数えます。</small></div>`};render()}
+
+/* ---------- ストア（課金）：コイン／プレミアム／着せ替え／称号／アイテム ---------- */
+const PAY_TEST=true; // true=テストモード（実際の課金なし）。実決済につなぐまでは false にすると購入が止まります
+const prem=()=>(P.prem||0)>Date.now();
+const PK=[[100,120,0],[500,600,30],[1000,1200,100],[3000,3500,400],[10000,11000,2000]]; // [コイン,円,おまけ]
+const CXT=[['t10','🍇 ぶどうテーマ',80,'#7b2ff7'],['t11','🍋 レモンテーマ',80,'#f2c400'],['t12','🌿 ミントテーマ',100,'#19b98a'],['t13','🌹 ローズテーマ',100,'#e0245e'],['t14','🌌 ギャラクシーテーマ',150,'#3a3fd8'],['t15','🍑 ピーチテーマ',100,'#ff8a80'],['t16','🌃 ナイトブルーテーマ',120,'#1e3a8a'],['t17','🍵 抹茶テーマ',100,'#6b9a2a'],['t18','🪸 コーラルテーマ',100,'#ff6f61'],['t19','⚫ モノクロテーマ',120,'#444444'],['t20','🔶 ゴールドリッチテーマ',200,'#c9a227'],['t21','🌊 ターコイズテーマ',150,'#00b8c4']];
+const CXF=[['f10','💎 ダイヤ枠',100,'0 0 0 3px #7ee8ff,0 0 16px 4px #b9f3ff'],['f11','🔥 炎枠',120,'0 0 0 3px #ff5a1f,0 0 18px 5px #ffb300'],['f12','❄️ 氷枠',100,'0 0 0 3px #bfe9ff,0 0 14px 4px #5cc8ff'],['f13','🌸 桜枠',100,'0 0 0 3px #ffc1d9,0 0 16px 4px #ff7eb3'],['f14','👑 王冠枠',200,'0 0 0 3px #ffd200,0 0 0 6px #fff,0 0 18px 6px #ffb300'],['f15','⚡ 雷枠',150,'0 0 0 3px #ffee58,0 0 20px 6px #7c4dff'],['f16','🌈 虹ネオン枠',250,'0 0 0 3px #ff4fa3,0 0 0 6px #2fd4ff,0 0 0 9px #a6f21a,0 0 18px 8px #ffd200'],['f17','🏅 黄金二重枠',180,'0 0 0 3px #b8860b,0 0 0 6px #ffd700,0 0 14px 4px #fff2a8']];
+const CX=[...CXT,...CXF],SHA=()=>SH.concat(CX.map(x=>[x[0],x[1],0,x[3]]));
+const TTL=[['🌟','新星作家',30],['🖋','文豪',80],['📚','本の虫',40],['🌙','夜更かし作家',40],['🐉','伝説の語り部',150],['💫','星屑',30],['🍀','幸運の使者',60],['🎭','物語の魔術師',100],['🔥','情熱の筆',50],['🧙','言葉の魔法使い',120]];
+const ITM=[['bst24','🚀','作品ブースト 24時間',50,'ホームの「ブースト中の作品」に24時間表示'],['bst72','🚀','作品ブースト 72時間',120,'3日間おすすめ枠に表示'],['bst168','🌠','作品ブースト 1週間',250,'7日間おすすめ枠に表示'],['dr','📝','下書き枠 +20',60,'下書き箱の上限を20件拡張（何度でも）'],['pt1','⭐','ポイントパック 1,200pt',100,'投げ銭・ショップに使えます'],['pt2','⭐','ポイントパック 6,500pt',500,'+500pt おまけ付き'],['pt3','💰','ポイントパック 14,000pt',1000,'+2,000pt おまけ・いちばんお得']];
+let STP=0;const stSeg=i=>{STP=i;render()};
+const srow=(e,n,d,b)=>`<div class=row style="cursor:default"><span style="font-size:26px">${e}</span><div class=grow><b>${n}</b><small>${d}</small></div>${b}</div>`;
+function spend(n,name){if(myBan()){banSheet(myBan());return 0}if((P.cn||0)<n){STP=0;toast('💎コインが足りません。コインを購入してください');render();return 0}P.cn-=n;(P.ord=P.ord||[]).unshift({d:Date.now(),n:name,c:n});P.ord=P.ord.slice(0,60);return 1}
+function buyPack(i){if(!PAY_TEST)return toast('決済は準備中です');const[c,y,b]=PK[i];if(!confirm('【テストモード】実際の課金は発生しません。\n'+c+'コイン（¥'+y+'）を購入しますか？'))return;let g=c+b;if(!P.fp){P.fp=1;g+=Math.floor(c*.5)}P.cn=(P.cn||0)+g;(P.ord=P.ord||[]).unshift({d:Date.now(),n:'コイン'+c+'購入 ¥'+y,c:-g});save();boom();toast('💎 +'+g+'コイン');render()}
+function buyPrem(){if(!spend(400,'プレミアム30日'))return;P.prem=Math.max(Date.now(),P.prem||0)+30*864e5;save();boom();toast('👑 プレミアムが始まりました');render()}
+function buyCx(id){const x=CX.find(v=>v[0]===id),own=P.own=P.own||[];if(!own.includes(id)){if(!spend(x[2],x[1]))return;own.push(id);boom();toast(x[1]+' を手に入れた！')}equip(id)}
+function buyTt(i){const t=TTL[i],o=P.tts=P.tts||[],k=t[0]+t[1];if(!o.includes(k)){if(!spend(t[2],'称号 '+k))return;o.push(k);boom()}P.tt=P.tt===k?'':k;save();toast(P.tt?'称号を装備しました':'称号を外しました');render()}
+function buyItm(id){const x=ITM.find(v=>v[0]===id);if(id.startsWith('bst'))return bstPick(id);if(!spend(x[3],x[2]))return;if(id==='dr')P.dx=(P.dx||0)+20;else P.pt=(P.pt||0)+{pt1:1200,pt2:7000,pt3:16000}[id];save();boom();toast(x[2]+' を購入しました');render()}
+function bstPick(id){const m=D.eps.filter(e=>e.author===P.name);if(!m.length)return toast('投稿した作品がありません');sheet={t:'🚀 ブーストする作品を選択',h:list(m,e=>`<div class=row onclick="bstDo('${id}','${e.id}')">${cov(e,40,54)}<div class=grow><b>${esc(e.title)}</b>${e.bst>Date.now()?'<small>ブースト中（延長されます）</small>':''}</div></div>`)};render()}
+function bstDo(id,eid){const x=ITM.find(v=>v[0]===id),e=D.eps.find(v=>v.id===eid),h={bst24:24,bst72:72,bst168:168}[id];if(!e||!spend(x[3],x[2]))return;e.bst=Math.max(Date.now(),e.bst||0)+h*36e5;e.u=Date.now();sheet=null;save();boom();toast('🚀 『'+e.title+'』をブーストしました');render()}
+function claimDaily(){const d=ymd(Date.now());if(P.dbn===d)return toast('今日は受け取り済みです');P.dbn=d;const v=prem()?100:10;P.pt=(P.pt||0)+v;save();boom();toast('🎁 ログインボーナス +'+v+'pt'+(prem()?'（プレミアム）':''));render()}
+const cxRow=x=>{const own=(P.own||[]).includes(x[0]),on=P.th===x[0]||P.fr===x[0],t=x[0][0]=='t';return srow(`<span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:${t?x[3]:'#8884'};${t?'':'box-shadow:'+x[3]}"></span>`,x[1],t?'アクセントカラー':'アイコンの枠',`<button class="btn${own?' o':''}" onclick="buyCx('${x[0]}')">${on?'装備中':own?'装備':'💎'+x[2]}</button>`)};
+function storeH(){const pm=prem(),hd=`<div class=pad><div class=card style="padding:14px;text-align:center"><small>所持</small><b style="font-size:26px">💎 ${P.cn||0}</b>　⭐ ${P.pt||0}pt${pm?`<br><span class=badge style="background:#e08a00">👑 PREMIUM　あと${Math.ceil((P.prem-Date.now())/864e5)}日</span>`:''}<div style="margin-top:8px"><button class="btn o" onclick="claimDaily()">🎁 ログインボーナス（${pm?100:10}pt）</button></div>${PAY_TEST?'<small style="color:var(--red)">⚠ テストモード：実際の課金は発生しません</small>':''}</div></div>`;let b;
+  if(STP==0)b=sec('💎 コインパック',PK.map(([c,y,o],i)=>srow('💎',c.toLocaleString()+'コイン'+(o?` <span class=badge>+${o}おまけ</span>`:''),'¥'+y.toLocaleString()+(P.fp?'':'　初回は+50%増量'),`<button class=btn onclick="buyPack(${i})">¥${y.toLocaleString()}</button>`)).join(''))+`<div class=empty>コインはストア内の商品の購入に使います。ポイント（無料）とは別の通貨です。</div>`;
+  else if(STP==1)b=sec('👑 プレミアム（30日・400コイン）',[['🚫','広告バー非表示','ホーム画面の広告を消します'],['🎁','ログインボーナス 100pt','通常は10pt'],['💰','収益ポイント +10%','獲得した収益に10%上乗せ'],['📝','下書き枠 +30','下書き箱の上限が拡大'],['👑','PREMIUMバッジ','名前の横に表示']].map(x=>srow(x[0],x[1],x[2],'')).join('')+`<div style="padding:12px"><button class="btn w" style="margin:0;width:100%" onclick="buyPrem()">${pm?'30日延長する':'プレミアムを始める'}　💎400</button></div>`);
+  else if(STP==2)b=sec('🎨 テーマ',CXT.map(cxRow).join(''))+sec('🖼 アイコン枠',CXF.map(cxRow).join(''))+sec('🛒 ポイントショップ（ポイントで購入）',shopH());
+  else if(STP==3)b=sec('🏷 称号（名前の横に表示）',TTL.map((t,i)=>{const k=t[0]+t[1],own=(P.tts||[]).includes(k);return srow(t[0],t[1],'みんなに見える称号',`<button class="btn${own?' o':''}" onclick="buyTt(${i})">${P.tt===k?'装備中':own?'装備':'💎'+t[2]}</button>`)}).join(''));
+  else if(STP==4)b=sec('🧰 アイテム',ITM.map(x=>srow(x[1],x[2],x[4],`<button class=btn onclick="buyItm('${x[0]}')">💎${x[3]}</button>`)).join(''));
+  else b=sec('🧾 履歴',list(P.ord||[],o=>srow(o.c<0?'💎':'🛍',esc(o.n),ago(o.d),`<b>${o.c<0?'＋'+(-o.c):'−'+o.c}💎</b>`),'購入履歴はありません'));
+  return hd+seg(['💎コイン','👑プレミアム','🎨着せ替え','🏷称号','🧰アイテム','🧾履歴'],STP,'stSeg')+b}
+const storeSec=()=>sec('💎 ストア',`<div class=empty>コイン 💎${P.cn||0}${prem()?'　👑プレミアム中':''}</div><div style="padding:0 14px 12px"><button class="btn w" style="margin:0;width:100%" onclick="go('store','x')">ストアを開く</button></div>`);
+const supB=n=>{const t=n===P.name?P.gt||0:(PR[n]||{}).sup||0,s=SUP.find(x=>t>=x[0]),tt=n===P.name?P.tt:(PR[n]||{}).tt,pm=n===P.name?prem():((PR[n]||{}).pm||0)>Date.now();
+  return (pm?' <span class=badge style="background:#e08a00">👑</span>':'')+(tt?` <span class=badge style="background:#8a3ffc">${esc(tt)}</span>`:'')+(s?` <span class=badge style="background:#e08a00">${s[1]}${s[2]}サポーター</span>`:'')};
+
 /* ---------- navigation ---------- */
 const TABS=[['🏠','ホーム',home],['🔍','検索',search],['🏆','ランキング',ranking],['✏️','投稿',post],['📚','本棚',library],['🙂','プロフ',profile]];
-const V={ep:id=>{if(P.last!==id){P.last=id;save()}mis('read');rlog(id);seen(id);return reader(id)},room:roomDetail,author,edit:()=>ed('e')};
+const V={store:()=>storeH(),ep:id=>{if(P.last!==id){P.last=id;save()}mis('read');rlog(id);seen(id);return reader(id)},room:roomDetail,author,edit:()=>ed('e')};
 function go(t,a){stack.push({t,a:decodeURIComponent(a)});render(1)}
 const back=()=>{stack.pop();render(1)};
 const setTab=i=>{tab=i;stack=[];render(1)};
 function render(top){if(top&&window.speechSynthesis)speechSynthesis.cancel();
   const y=scrollY,t=stack[stack.length-1];let h;
-  if(t){const T={ep:'',room:'Room詳細',author:t.a,edit:'作品を編集'}[t.t];h=`<div class=nb><button onclick="back()">‹ 戻る</button><b>${esc(T)}</b></div>`+V[t.t](t.a)}
+  if(t){const T={ep:'',room:'Room詳細',author:t.a,edit:'作品を編集',store:'💎 ストア'}[t.t];h=`<div class=nb><button onclick="back()">‹ 戻る</button><b>${esc(T)}</b></div>`+V[t.t](t.a)}
   else h=TABS[tab][2]();
   $('#app').innerHTML=`<main>${h}</main>${lv?'':`<nav>${TABS.map((x,i)=>`<button class="${i==tab&&!stack.length?'on':''}" onclick="setTab(${i})"><span>${x[0]}${i==TABS.length-1&&notifs().length?'<u class=nd></u>':''}</span>${x[1]}</button>`).join('')}</nav>`}${lv?'<div id=live class=live></div>':''}${sheet?sheetHTML():''}`;
   if(lv)renderLive();
   scrollTo(0,top?0:y);if(top&&t&&t.t==='ep')resume(t.a);if(top&&!t&&tab==1&&!SR.q){const i=$('#sqi');if(i)i.focus()}
 }
-if(!P.sn)snap();applyTheme();applyDk();render();cloudPull().then(cloudPush);setInterval(cloudPull,30000);
+if(!P.sn)snap();applyTheme();applyDk();render();modInit();cloudPull().then(cloudPush);setInterval(cloudPull,30000);
 </script>
 </body>
 </html>
