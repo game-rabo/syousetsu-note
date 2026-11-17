@@ -139,7 +139,7 @@ function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clea
 const SB='https://mzykelberuojpgyieiqv.supabase.co',KEY='sb_publishable_DgxzZQeKj0tz4EELPlNFeg_TH1CcuQD';
 let cloud='未接続',PR={};const hs={},TB=[['nn_episodes','eps'],['nn_rooms','rooms']];
 async function api(p,o={}){const r=await fetch(SB+'/rest/v1/'+p,{...o,headers:{apikey:KEY,'Content-Type':'application/json',...(o.headers||{})}});const t=await r.text();if(!r.ok)throw new Error(t);return t?JSON.parse(t):null}
-const BUILD='2026-11-17-c';
+const BUILD='2026-11-17-d';
 /* 接続診断：各テーブル／関数に実際にアクセスして結果を一覧表示 */
 async function cloudDiag(){
   const T=['nn_episodes','nn_rooms','nn_profiles','nn_reports','nn_bans','nn_appeals','nn_modlog'];
@@ -147,7 +147,7 @@ async function cloudDiag(){
   sheet={t:'🔍 接続診断',h:'<div class=pad>'+head+'<p>確認中…</p></div>'};render();
   let rows='',bad=0;
   for(const t of T){let st;
-    try{const r=await fetch(SB+'/rest/v1/'+t+'?select=id&limit=1',{headers:{apikey:KEY}}),x=await r.text();let j=null;try{j=JSON.parse(x)}catch(_){}
+    try{const r=await fetch(SB+'/rest/v1/'+t+'?select='+(t==='nn_bans'?'name':'id')+'&limit=1',{headers:{apikey:KEY}}),x=await r.text();let j=null;try{j=JSON.parse(x)}catch(_){}
       const c=(j&&j.code)||'';
       if(r.ok)st='✅ OK';
       else if(c==='42501')st='✅ 存在します（読み取り不可は正常）';
@@ -159,7 +159,7 @@ async function cloudDiag(){
     if(r.ok)fn='✅ 運営用関数 OK';else{bad++;fn='❌ 運営用関数 '+r.status+'（SQLの関数部分が未作成）'}}
   catch(e){bad++;fn='❌ 通信できません'}
   rows+='<div style="padding:5px 0"><b>rpc/adm_ok</b><br><small>'+esc(fn)+'</small></div>';
-  const msg=bad?'<p style="color:var(--red)"><b>❌ が'+bad+'件あります。</b>テーブルが無い場合は、上の「接続先」と同じプロジェクトで supabase_setup.sql を実行してください。</p>':'<p><b>✅ すべて正常です。</b>「今すぐ同期」を押してください。</p>';
+  const msg=bad?'<p style="color:var(--red)"><b>❌ が'+bad+'件あります。</b>テーブルが見つからない場合：①SQL Editorで supabase_reload.sql を実行 ②1分待って再診断 ③それでもダメなら Supabase の Project Settings → General → Restart project</p>':'<p><b>✅ すべて正常です。</b>「今すぐ同期」を押してください。</p>';
   sheet={t:'🔍 接続診断',h:'<div class=pad>'+head+msg+'<div class=card style="padding:6px 12px">'+rows+'</div></div>'};render()}
 /* 同期エラーの原因を判別して表示（原因が分からない問題の再発防止） */
 function cerr(e){let m=String(e&&e.message||e),j=null;try{j=JSON.parse(m)}catch(_){}
